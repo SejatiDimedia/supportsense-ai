@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bot, User, Copy, Check, Eye, Clock, ShieldCheck, Zap } from 'lucide-react';
+import { Bot, User, Copy, Check, Eye, Clock, ShieldCheck, Zap, Sparkles, Layers, Database, BrainCircuit } from 'lucide-react';
 import { ChatMessage, RouteType } from '../types';
 
 interface ChatStreamProps {
@@ -30,6 +30,31 @@ const ROUTE_CONFIG: Record<RouteType, { label: string; style: string }> = {
     label: 'Escalated',
     style: 'border-red-200 bg-red-50 text-red-700',
   },
+};
+
+const getThinkingStep = (seconds: number) => {
+  if (seconds < 1.2) {
+    return {
+      step: 'Step 1/3',
+      title: 'Semantic Query Routing',
+      detail: 'Analyzing inquiry intent across RAG and KAG pipelines',
+      Icon: Layers,
+    };
+  }
+  if (seconds < 3.2) {
+    return {
+      step: 'Step 2/3',
+      title: 'Relational Graph & Vector Retrieval',
+      detail: 'Traversing PostgreSQL schema and matching policy chunks',
+      Icon: Database,
+    };
+  }
+  return {
+    step: 'Step 3/3',
+    title: 'Grounded Response Synthesis',
+    detail: 'Synthesizing response with Hermes LLM and validating facts',
+    Icon: BrainCircuit,
+  };
 };
 
 export const ChatStream: React.FC<ChatStreamProps> = ({
@@ -175,28 +200,68 @@ export const ChatStream: React.FC<ChatStreamProps> = ({
         );
       })}
 
-      {/* Loading & Reasoning Shimmer */}
-      {isLoading && (
-        <div className="flex gap-3.5 justify-start">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white">
-            <Bot className="h-4 w-4 animate-spin" />
-          </div>
-          <div className="max-w-xl rounded-2xl border border-slate-200 bg-white p-4 text-xs text-slate-600 shadow-sm">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="font-semibold text-slate-900">
-                Analyzing inquiry across RAG & KAG pipelines...
-              </span>
-              <span className="font-mono text-slate-400">
-                ({elapsedSeconds.toFixed(1)}s)
+      {/* Loading & Reasoning State */}
+      {isLoading && (() => {
+        const step = getThinkingStep(elapsedSeconds);
+        const StepIcon = step.Icon;
+        return (
+          <div className="flex gap-3.5 justify-start">
+            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
+              <Bot className="h-4 w-4" />
+              <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lime-400 opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-lime-400" />
               </span>
             </div>
-            <p className="mt-1.5 text-slate-400 font-mono text-[11px]">
-              Querying PostgreSQL relational tables, calculating embedding similarity, and synthesizing response...
-            </p>
+
+            <div className="max-w-xl w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+              {/* Header row: Sparkles + Thinking text + animated typing dots + elapsed time pill */}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-3.5 w-3.5 text-slate-700" />
+                  <span className="text-xs font-semibold text-slate-900 tracking-tight">
+                    SupportSense is thinking
+                  </span>
+                  <div className="flex items-center gap-1 pl-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-slate-400 dot-1" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-slate-400 dot-2" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-slate-400 dot-3" />
+                  </div>
+                </div>
+                <span className="font-mono text-[11px] text-slate-600 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
+                  {elapsedSeconds.toFixed(1)}s
+                </span>
+              </div>
+
+              {/* Active progressive pipeline step */}
+              <div className="flex items-start gap-2.5">
+                <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                  <StepIcon className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-900">
+                      {step.title}
+                    </span>
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-600">
+                      {step.step}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-[11px] text-slate-600">
+                    {step.detail}
+                  </p>
+                </div>
+              </div>
+
+              {/* Shimmer skeleton lines */}
+              <div className="space-y-1.5 pt-1">
+                <div className="h-1.5 w-4/5 rounded-full bg-slate-200/80 animate-pulse" />
+                <div className="h-1.5 w-3/5 rounded-full bg-slate-200/50 animate-pulse" />
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       <div ref={bottomRef} />
     </div>
