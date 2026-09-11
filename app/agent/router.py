@@ -58,17 +58,38 @@ class AgentRouter:
 
         log_event(logger, "message_received", layer="agent.router", message=f"Received user message: '{user_message}' (session: {effective_session})")
 
-        # 1. Deteksi cepat sapaan (Greeting pre-filter untuk rute direct)
+        # 0. Ambil riwayat percakapan sesi untuk kontinuitas multi-turn
+        chat_history = repo.get_history(effective_session, limit=8)
+
+        # Deteksi nomor order aktif: utamakan pesan saat ini, fallback ke riwayat sesi
+        extracted_order = extract_order_number(user_message)
+        active_session_order = None
+        if not extracted_order and chat_history:
+            for past_msg in reversed(chat_history):
+                candidate = extract_order_number(past_msg.get("message", ""))
+                if candidate:
+                    active_session_order = candidate
+                    break
+
+        order_in_scope = extracted_order or active_session_order
+
+        # 1. Deteksi cepat sapaan / closing (Greeting pre-filter untuk rute direct)
         lower_msg = user_message.lower()
-        greetings = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "halo"]
+        greetings = [
+            "hi", "hello", "hey", "good morning", "good afternoon", "good evening", "halo",
+            "terima kasih", "makasih", "thank you", "thanks"
+        ]
         clean_text = lower_msg.strip("!.,? ")
-        is_greeting = clean_text in greetings or any(g in lower_msg for g in ["hello", "good morning", "good afternoon", "good evening", "hi there"])
-        substantive_keywords = ["order", "refund", "warranty", "ship", "product", "policy", "damage", "broken", "delay", "ticket", "#"]
+        is_greeting = clean_text in greetings or any(g in lower_msg for g in ["hello", "good morning", "good afternoon", "good evening", "hi there", "terima kasih"])
+        substantive_keywords = ["order", "refund", "warranty", "ship", "product", "policy", "damage", "broken", "delay", "ticket", "#", "agen", "kurir", "resi", "barang"]
         has_substantive_question = any(k in lower_msg for k in substantive_keywords)
 
         if is_greeting and not has_substantive_question:
             latency_ms = round((time.time() - start_time) * 1000, 2)
-            answer = "Hello! Welcome to SupportSense AI. How can I assist you with your orders, products, or company policies today?"
+            if any(t in lower_msg for t in ["terima kasih", "makasih", "thank"]):
+                answer = "Sama-sama! Senang bisa membantu Anda. Jika ada pertanyaan lain seputar pesanan atau layanan kami, jangan ragu untuk bertanya."
+            else:
+                answer = "Hello! Welcome to SupportSense AI. How can I assist you with your orders, products, or company policies today?"
             metrics.record_request("direct", latency_ms)
             try:
                 repo.save_message(
@@ -144,13 +165,22 @@ class AgentRouter:
                 context_used="Security trigger: unauthorized action requested."
             )
 
-        # 2. Minta LLM merencanakan tools yang dibutuhkan
-        tool_calls = self.llm.plan_routing(user_message)
+        # 3. Minta LLM merencanakan tools yang dibutuhkan (didukung chat_history)
+        tool_calls = self.llm.plan_routing(user_message, chat_history=chat_history)
         tool_names = [call.get("function", {}).get("name") for call in tool_calls]
 
-        # Cadangan: jika LLM lupa panggil KAG tapi teks jelas menyebut order #1234
-        extracted_order = extract_order_number(user_message)
+        # Cadangan 1: jika ada nomor order eksplisit di pesan saat ini
         if extracted_order and "lookup_relational_data" not in tool_names:
+            tool_names.append("lookup_relational_data")
+
+        # Cadangan 2: Multi-turn follow-up jika user menanyakan detail terkait pesanan aktif di sesi
+        order_related_keywords = [
+            "refund", "agent", "agen", "kurir", "courier", "track", "resi", "status",
+            "barang", "product", "paket", "package", "kirim", "ship", "lost", "hilang",
+            "rusak", "damage", "rma", "ganti", "pengganti", "dana", "money", "uang", "pic", "kapan", "estimasi"
+        ]
+        is_order_followup = bool(active_session_order and any(k in lower_msg for k in order_related_keywords))
+        if is_order_followup and "lookup_relational_data" not in tool_names:
             tool_names.append("lookup_relational_data")
 
         rag_context = ""
@@ -160,15 +190,17 @@ class AgentRouter:
         confidence = 0.85
         order_found = None
 
-        # 3. Eksekusi KAG jika diminta
+        # 4. Eksekusi KAG jika diminta
         if "lookup_relational_data" in tool_names:
-            order_to_query = extracted_order
+            order_to_query = order_in_scope
             if not order_to_query:
                 # Cari nomor order dari argumen tool call LLM
                 for call in tool_calls:
                     if call.get("function", {}).get("name") == "lookup_relational_data":
-                        order_to_query = call.get("function", {}).get("arguments", {}).get("order_number")
-                        break
+                        raw_arg = call.get("function", {}).get("arguments", {}).get("order_number")
+                        if raw_arg:
+                            order_to_query = extract_order_number(raw_arg) or raw_arg
+                            break
 
             if order_to_query:
                 kag_result = self.kag.query_order_context(order_to_query)
@@ -227,7 +259,7 @@ class AgentRouter:
         if not combined_context.strip():
             combined_context = "No specific documentation or order details found for this inquiry."
 
-        answer = self.llm.generate_answer(user_message, combined_context)
+        answer = self.llm.generate_answer(user_message, combined_context, chat_history=chat_history)
 
         latency_ms = round((time.time() - start_time) * 1000, 2)
 
