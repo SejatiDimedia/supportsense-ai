@@ -45,6 +45,52 @@ class ConversationRepository:
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
 
+    def get_recent_history(self, session_id: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """Mengambil `limit` pesan terbaru dari sesi dalam urutan kronologis (ASC)."""
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, trace_id, session_id, role, message, route_taken, confidence_score, created_at
+                FROM (
+                    SELECT id, trace_id, session_id, role, message, route_taken, confidence_score, created_at
+                    FROM conversations
+                    WHERE session_id = ?
+                    ORDER BY id DESC
+                    LIMIT ?
+                ) sub
+                ORDER BY id ASC;
+                """,
+                (session_id, limit)
+            )
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+
+    def get_session_active_order(self, session_id: str, max_lookback: int = 100) -> Optional[str]:
+        """
+        Mencari nomor pesanan terakhir yang dibahas dalam sesi ini
+        tanpa batasan jumlah giliran pertanyaan (memindai hingga 100 pesan ke belakang).
+        """
+        from app.kag.graph_query import extract_order_number
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT message FROM conversations
+                WHERE session_id = ?
+                ORDER BY id DESC
+                LIMIT ?;
+                """,
+                (session_id, max_lookback)
+            )
+            rows = cursor.fetchall()
+            for row in rows:
+                msg_text = row["message"] if isinstance(row, dict) else row[0]
+                found = extract_order_number(msg_text)
+                if found:
+                    return found
+        return None
+
     def save_escalation(
         self,
         trace_id: str,

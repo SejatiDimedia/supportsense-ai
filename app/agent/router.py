@@ -58,18 +58,14 @@ class AgentRouter:
 
         log_event(logger, "message_received", layer="agent.router", message=f"Received user message: '{user_message}' (session: {effective_session})")
 
-        # 0. Ambil riwayat percakapan sesi untuk kontinuitas multi-turn
-        chat_history = repo.get_history(effective_session, limit=8)
+        # 0. Ambil riwayat percakapan sesi (sliding window 12 pesan terbaru untuk LLM)
+        chat_history = repo.get_recent_history(effective_session, limit=12)
 
-        # Deteksi nomor order aktif: utamakan pesan saat ini, fallback ke riwayat sesi
+        # Deteksi nomor order aktif: utamakan pesan saat ini, fallback ke riwayat panjang sesi (tanpa batas 4 pertanyaan)
         extracted_order = extract_order_number(user_message)
         active_session_order = None
-        if not extracted_order and chat_history:
-            for past_msg in reversed(chat_history):
-                candidate = extract_order_number(past_msg.get("message", ""))
-                if candidate:
-                    active_session_order = candidate
-                    break
+        if not extracted_order:
+            active_session_order = repo.get_session_active_order(effective_session, max_lookback=100)
 
         order_in_scope = extracted_order or active_session_order
 
