@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.api.routes_health import router as health_router
+from app.api.routes_metrics import router as metrics_router
 from app.observability.logger import setup_structured_logging
 
 setup_structured_logging()
@@ -21,6 +22,7 @@ app.add_middleware(
 )
 
 app.include_router(health_router)
+app.include_router(metrics_router)
 
 @app.get("/")
 async def root():

@@ -10,6 +10,7 @@ from app.rag.reranker import CrossEncoderReranker
 from app.kag.graph_query import GraphQueryEngine, extract_order_number
 
 from app.observability.logger import set_trace_id, log_event
+from app.observability.metrics import metrics
 
 logger = logging.getLogger(__name__)
 
@@ -165,6 +166,9 @@ class AgentRouter:
         answer = self.llm.generate_answer(user_message, combined_context)
 
         latency_ms = round((time.time() - start_time) * 1000, 2)
+
+        # Record observability metrics
+        metrics.record_request(route_taken, latency_ms)
 
         return ChatResult(
             trace_id=trace_id,
