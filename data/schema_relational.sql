@@ -147,7 +147,8 @@ INSERT INTO order_items (id, order_id, product_id, quantity) VALUES
 ('ITEM-012', 'ORD-4532', 'PROD-008', 1),
 ('ITEM-013', 'ORD-4533', 'PROD-009', 1),
 ('ITEM-014', 'ORD-4534', 'PROD-001', 1),
-('ITEM-015', 'ORD-4535', 'PROD-006', 1)
+('ITEM-015', 'ORD-4535', 'PROD-006', 1),
+('ITEM-016', 'ORD-4525', 'PROD-004', 1)
 ON CONFLICT (id) DO UPDATE SET quantity = EXCLUDED.quantity;
 
 -- ============================================================================

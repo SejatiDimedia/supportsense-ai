@@ -82,6 +82,8 @@ class SQLRelationalQueryEngine:
             c.name AS customer_name,
             c.email AS customer_email,
             p.name AS product_name,
+            oi.quantity,
+            p.price_idr,
             i.issue_type,
             i.issue_status,
             i.notes AS issue_notes,
@@ -97,13 +99,13 @@ class SQLRelationalQueryEngine:
         WHERE o.order_number = {placeholder};
         """
 
-        row = None
+        rows = []
         if self.use_postgres:
             try:
                 with psycopg2.connect(self.pg_url, connect_timeout=3) as conn:
                     with conn.cursor() as cur:
                         cur.execute(query, (clean_num,))
-                        row = cur.fetchone()
+                        rows = cur.fetchall()
             except Exception as e:
                 logger.warning(f"PostgreSQL query failed ({e}), attempting SQLite fallback.")
                 self.use_postgres = False
@@ -113,9 +115,9 @@ class SQLRelationalQueryEngine:
             with sqlite3.connect(self.sqlite_path) as conn:
                 cursor = conn.cursor()
                 cursor.execute(query.replace("%s", "?"), (clean_num,))
-                row = cursor.fetchone()
+                rows = cursor.fetchall()
 
-        if not row:
+        if not rows:
             return {
                 "found": False,
                 "order_number": order_number,
@@ -123,17 +125,45 @@ class SQLRelationalQueryEngine:
                 "summary": f"Order {clean_num} was not found in relational database records."
             }
 
+        first_row = rows[0]
         (
             ord_num, ord_status, carrier, tracking,
-            cust_name, cust_email, prod_name,
+            cust_name, cust_email, _, _, _,
             issue_type, issue_status, issue_notes,
             agent_name, agent_role, agent_email
-        ) = row
+        ) = first_row
+
+        # Agregasi semua produk dalam pesanan (mendukung satu atau banyak produk)
+        products_list = []
+        seen_products = set()
+        for r in rows:
+            p_name = r[6]
+            p_qty = r[7] if r[7] is not None else 1
+            p_price = r[8]
+            if p_name and p_name not in seen_products:
+                seen_products.add(p_name)
+                products_list.append({
+                    "name": p_name,
+                    "quantity": p_qty,
+                    "price_idr": p_price
+                })
+
+        if len(products_list) == 1:
+            prod_str = f"Contains Product: {products_list[0]['name']}"
+            if products_list[0]['quantity'] > 1:
+                prod_str += f" (Quantity: {products_list[0]['quantity']})"
+        elif len(products_list) > 1:
+            items_str = ", ".join([
+                f"{p['name']} (Quantity: {p['quantity']})" for p in products_list
+            ])
+            prod_str = f"Contains {len(products_list)} products: {items_str}"
+        else:
+            prod_str = "No items recorded in order"
 
         # Rangkum fakta relasional menjadi kalimat natural untuk LLM
         summary_parts = [
             f"Order {ord_num} placed by Customer {cust_name} ({cust_email}).",
-            f"Contains Product: {prod_name}.",
+            f"{prod_str}.",
             f"Current Shipping Status: '{ord_status}' via {carrier} (Tracking: {tracking})."
         ]
 
@@ -169,7 +199,7 @@ class SQLRelationalQueryEngine:
                     "name": cust_name,
                     "email": cust_email
                 },
-                "products": [{"name": prod_name}] if prod_name else [],
+                "products": products_list,
                 "issues": [
                     {
                         "issue_type": issue_type,

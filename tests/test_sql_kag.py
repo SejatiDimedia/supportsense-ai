@@ -32,3 +32,13 @@ def test_sql_kag_query_order_not_found(sql_engine):
     result = sql_engine.query_order_context("#9999999")
     assert result["found"] is False
     assert "not found" in result["summary"].lower()
+
+def test_sql_kag_query_order_with_multiple_items(sql_engine):
+    result = sql_engine.query_order_context("#4525")
+    assert result["found"] is True
+    assert "2 products" in result["summary"] or "Smart Home Mesh Wi-Fi 6 Hub" in result["summary"]
+    assert "Ergonomic Executive Office Chair V2" in result["summary"]
+    assert len(result["data"]["products"]) == 2
+    product_names = [p["name"] for p in result["data"]["products"]]
+    assert "Smart Home Mesh Wi-Fi 6 Hub" in product_names
+    assert "Ergonomic Executive Office Chair V2" in product_names
