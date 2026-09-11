@@ -231,8 +231,13 @@ class AgentRouter:
 
             retrieved = self.retriever.retrieve(search_query, top_k=5)
             reranked = self.reranker.rerank(search_query, retrieved, top_n=2)
-            if reranked:
-                rag_context = "\n\n".join([f"[{c.metadata.get('source')} - {c.metadata.get('section')}]:\n{c.text}" for c in reranked])
+            # Relevansi minimal: jika skor cross-encoder sangat negatif (< -7.0), abaikan dokumen yang tidak relevan
+            valid_chunks = [
+                c for c in reranked
+                if not isinstance(getattr(c, "score", None), (int, float)) or getattr(c, "score", 0) >= -7.0
+            ]
+            if valid_chunks:
+                rag_context = "\n\n".join([f"[{c.metadata.get('source')} - {c.metadata.get('section')}]:\n{c.text}" for c in valid_chunks])
 
         # 5. Cek apakah ada eskalasi eksplisit
         if "escalate_to_human" in tool_names:
