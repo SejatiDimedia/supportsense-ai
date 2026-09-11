@@ -186,11 +186,11 @@ if "messages" not in st.session_state:
 
 # Router & Knowledge Graph Singletons
 @st.cache_resource
-def get_router() -> AgentRouter:
+def get_router(cache_buster: str = "v2_postgres_integrated") -> AgentRouter:
     return AgentRouter()
 
 @st.cache_resource
-def get_system_topology() -> Dict[str, Any]:
+def get_system_topology(cache_buster: str = "v2_postgres_integrated") -> Dict[str, Any]:
     try:
         vsm = VectorStoreManager()
         chroma_count = vsm.get_or_create_collection().count()
@@ -280,6 +280,11 @@ with st.sidebar:
             st.session_state.session_id = f"sess_{str(uuid.uuid4())[:8]}"
             st.session_state.messages = []
             st.rerun()
+
+    if st.button("Reload System & Cache", use_container_width=True, help="Purge cached singletons and reconnect to database"):
+        st.cache_resource.clear()
+        st.session_state.messages = []
+        st.rerun()
 
     st.markdown("---")
     st.markdown("#### System Components")
