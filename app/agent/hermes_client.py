@@ -4,6 +4,8 @@ from typing import List, Dict, Any, Optional
 import httpx
 from app.config import settings
 
+from app.llm.client import ResilientOllamaClient
+
 logger = logging.getLogger(__name__)
 
 # 1. Definisi Tools sesuai standar Ollama / OpenAI function-calling
@@ -73,50 +75,22 @@ Analyze the user's inquiry and decide which tools to call:
 class HermesAgentClient:
     """
     Klien pemanggil Ollama Chat API yang menangani pemanggilan tool (function calling)
-    dan pembentukan jawaban akhir (response synthesis).
+    dan pembentukan jawaban akhir (response synthesis), dilindungi oleh ResilientOllamaClient.
     """
-    def __init__(self, base_url: str = settings.ollama_base_url, model: str = settings.llm_model):
-        self.base_url = base_url.rstrip("/")
-        self.model = model
+    def __init__(self, resilient_client: Optional[ResilientOllamaClient] = None):
+        self.client = resilient_client or ResilientOllamaClient()
 
     def plan_routing(self, user_message: str) -> List[Dict[str, Any]]:
         """
         Mengirim pesan user ke Ollama dengan daftar SUPPORT_TOOLS.
         Mengembalikan daftar tool calls yang diputuskan oleh LLM.
         """
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": "system", "content": ROUTER_SYSTEM_PROMPT},
-                {"role": "user", "content": user_message}
-            ],
-            "tools": SUPPORT_TOOLS,
-            "stream": False,
-            "options": {
-                "temperature": 0.0  # Deterministik agar keputusan routing konsisten
-            }
-        }
-
-        try:
-            with httpx.Client(timeout=30.0) as client:
-                response = client.post(f"{self.base_url}/api/chat", json=payload)
-                response.raise_for_status()
-                data = response.json()
-
-            message = data.get("message", {})
-            tool_calls = message.get("tool_calls", [])
-
-            # Fallback parsing jika model mengembalikan tool_calls dalam teks content
-            if not tool_calls and "content" in message:
-                content = message["content"]
-                if "search_knowledge_base" in content or "lookup_relational_data" in content or "escalate_to_human" in content:
-                    logger.info("Parsing inline tool calls from message content...")
-
-            return tool_calls
-
-        except Exception as e:
-            logger.error(f"Error calling Ollama routing: {e}", exc_info=True)
-            return []
+        messages = [
+            {"role": "system", "content": ROUTER_SYSTEM_PROMPT},
+            {"role": "user", "content": user_message}
+        ]
+        resp = self.client.chat(messages=messages, tools=SUPPORT_TOOLS, temperature=0.0)
+        return resp.tool_calls
 
     def generate_answer(self, user_message: str, context: str) -> str:
         """
@@ -131,24 +105,9 @@ class HermesAgentClient:
             f"=== RETRIEVED CONTEXT ===\n{context}\n========================="
         )
 
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": "system", "content": system_instruction},
-                {"role": "user", "content": user_message}
-            ],
-            "stream": False,
-            "options": {
-                "temperature": 0.2
-            }
-        }
-
-        try:
-            with httpx.Client(timeout=30.0) as client:
-                response = client.post(f"{self.base_url}/api/chat", json=payload)
-                response.raise_for_status()
-                data = response.json()
-                return data.get("message", {}).get("content", "").strip()
-        except Exception as e:
-            logger.error(f"Error generating LLM answer: {e}", exc_info=True)
-            return "I apologize, but our system is currently experiencing high load. A human support representative will follow up with you shortly."
+        messages = [
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": user_message}
+        ]
+        resp = self.client.chat(messages=messages, temperature=0.2)
+        return resp.content
