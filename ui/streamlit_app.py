@@ -21,133 +21,191 @@ logger = logging.getLogger(__name__)
 
 # --- Page Configuration ---
 st.set_page_config(
-    page_title="SupportSense AI — Hybrid RAG + KAG Customer Support",
+    page_title="SupportSense AI — Hybrid RAG + KAG Assistant",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# --- Custom Impeccable Styling (Operate Mode, Accessible Contrast, Crisp Density) ---
+# --- Impeccable Dark Theme Styling (WCAG AA Compliant, High Contrast, Sleek Enterprise) ---
 st.markdown(
     """
     <style>
-    /* Global Typography & Spacing */
+    /* Font Stack & Base Typography */
     html, body, [class*="css"] {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
     
-    /* Header styling */
+    /* Top Header Styling */
+    .brand-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.25rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .brand-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
     .brand-title {
-        font-size: 1.75rem;
+        font-size: 1.6rem;
         font-weight: 700;
-        color: #0F172A;
         letter-spacing: -0.02em;
-        margin-bottom: 0.15rem;
+        color: #F8FAFC;
+        margin: 0;
+    }
+    .brand-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: rgba(16, 185, 129, 0.12);
+        color: #34D399;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        border-radius: 9999px;
+        padding: 0.2rem 0.65rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .brand-pill-dot {
+        width: 6px;
+        height: 6px;
+        background-color: #10B981;
+        border-radius: 50%;
+        box-shadow: 0 0 6px #10B981;
     }
     .brand-subtitle {
-        font-size: 0.95rem;
-        color: #475569;
-        margin-bottom: 1.25rem;
-        line-height: 1.4;
+        font-size: 0.9rem;
+        color: #94A3B8;
+        margin-top: 0.4rem;
+        margin-bottom: 1.2rem;
+        line-height: 1.45;
     }
     
-    /* Route Badges (High Contrast, Accessible, WCAG AA Compliant) */
+    /* Modern Translucent Badges (High Contrast, Sleek Dark Palette) */
+    .badge-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 0.6rem;
+        margin-bottom: 0.5rem;
+    }
     .badge {
         display: inline-flex;
         align-items: center;
-        padding: 0.2rem 0.6rem;
-        border-radius: 9999px;
-        font-size: 0.75rem;
+        padding: 0.22rem 0.65rem;
+        border-radius: 6px;
+        font-size: 0.73rem;
         font-weight: 600;
-        letter-spacing: 0.03em;
+        letter-spacing: 0.04em;
         text-transform: uppercase;
-        margin-right: 0.4rem;
-        margin-bottom: 0.3rem;
     }
     .badge-rag {
-        background-color: #ECFDF5;
-        color: #065F46;
-        border: 1px solid #A7F3D0;
+        background: rgba(16, 185, 129, 0.16);
+        color: #34D399;
+        border: 1px solid rgba(52, 211, 153, 0.35);
     }
     .badge-kag {
-        background-color: #F5F3FF;
-        color: #5B21B6;
-        border: 1px solid #DDD6FE;
+        background: rgba(139, 92, 246, 0.16);
+        color: #A78BFA;
+        border: 1px solid rgba(167, 139, 250, 0.35);
     }
     .badge-hybrid {
-        background-color: #FEF3C7;
-        color: #92400E;
-        border: 1px solid #FDE68A;
+        background: rgba(245, 158, 11, 0.16);
+        color: #FBBF24;
+        border: 1px solid rgba(251, 191, 36, 0.35);
     }
     .badge-direct {
-        background-color: #EFF6FF;
-        color: #1E40AF;
-        border: 1px solid #BFDBFE;
+        background: rgba(59, 130, 246, 0.16);
+        color: #60A5FA;
+        border: 1px solid rgba(96, 165, 250, 0.35);
     }
     .badge-escalated {
-        background-color: #FEF2F2;
-        color: #991B1B;
-        border: 1px solid #FECACA;
+        background: rgba(239, 68, 68, 0.18);
+        color: #F87171;
+        border: 1px solid rgba(248, 113, 113, 0.4);
     }
     .badge-metric {
-        background-color: #F1F5F9;
-        color: #334155;
-        border: 1px solid #CBD5E1;
+        background: rgba(255, 255, 255, 0.05);
+        color: #CBD5E1;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
     
-    /* Inspection card */
-    .inspect-box {
-        background-color: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        border-radius: 6px;
-        padding: 0.8rem;
-        margin-top: 0.5rem;
-        font-size: 0.85rem;
-    }
-    
-    /* Sidebar card container */
-    .status-card {
-        background-color: #F8FAFC;
-        border: 1px solid #E2E8F0;
+    /* Sidebar Cards */
+    .sidebar-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 8px;
-        padding: 0.75rem 0.9rem;
-        margin-bottom: 0.75rem;
+        padding: 0.75rem 0.85rem;
+        margin-bottom: 0.65rem;
     }
-    .status-header {
-        font-size: 0.75rem;
+    .sidebar-card-label {
+        font-size: 0.7rem;
         font-weight: 600;
-        color: #64748B;
+        color: #94A3B8;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.2rem;
     }
-    .status-value {
-        font-size: 0.95rem;
+    .sidebar-card-value {
+        font-size: 0.92rem;
         font-weight: 600;
-        color: #0F172A;
+        color: #F8FAFC;
     }
-    .status-online {
-        color: #059669;
-        font-weight: 600;
+    .sidebar-card-sub {
+        font-size: 0.75rem;
+        color: #64748B;
+        margin-top: 0.15rem;
     }
-    .status-offline {
-        color: #DC2626;
+    
+    /* Quick Action Prompt Chips */
+    .scenario-title {
+        font-size: 0.82rem;
         font-weight: 600;
+        color: #94A3B8;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.4rem;
+    }
+    
+    /* Inspection Section styling */
+    .context-card {
+        background: #111827;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 6px;
+        padding: 0.85rem;
+        color: #E2E8F0;
+        font-size: 0.83rem;
+        line-height: 1.5;
+        margin-top: 0.4rem;
+    }
+    .context-header {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #60A5FA;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin-bottom: 0.4rem;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# --- State Management ---
+# --- Session State ---
 if "session_id" not in st.session_state:
     st.session_state.session_id = f"sess_{str(uuid.uuid4())[:8]}"
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Router singleton
+# Router & Knowledge Graph Singletons
 @st.cache_resource
 def get_router() -> AgentRouter:
     return AgentRouter()
@@ -176,15 +234,15 @@ def get_system_topology() -> Dict[str, Any]:
 router_instance = get_router()
 topology = get_system_topology()
 
-# --- Helper: Send Query ---
+# --- Query Dispatcher ---
 def submit_query(prompt_text: str):
     if not prompt_text.strip():
         return
 
-    # Add user message to state
+    # Add user message
     st.session_state.messages.append({"role": "user", "content": prompt_text})
 
-    # Try dispatching to local FastAPI server if active, fallback to direct AgentRouter
+    # Try local FastAPI endpoint, fallback to direct AgentRouter
     api_url = f"http://localhost:{settings.app_port}/chat"
     chat_result = None
 
@@ -197,7 +255,6 @@ def submit_query(prompt_text: str):
             if resp.status_code == 200:
                 chat_result = resp.json()
     except Exception:
-        # Fallback to direct local AgentRouter instance
         pass
 
     if not chat_result:
@@ -221,14 +278,14 @@ def submit_query(prompt_text: str):
 # --- Sidebar: System Control & Observability Cockpit ---
 with st.sidebar:
     st.markdown("### ⚡ SupportSense Cockpit")
-    st.caption("AI Customer Support Assistant | Multi-Path Orchestrator")
+    st.caption("AI Customer Support Assistant | Modular Monolith")
 
-    # Session Manager
+    # Session Manager Card
     st.markdown(
         f"""
-        <div class="status-card">
-            <div class="status-header">Current Session</div>
-            <div class="status-value" style="font-family: monospace;">{st.session_state.session_id}</div>
+        <div class="sidebar-card">
+            <div class="sidebar-card-label">Active Session ID</div>
+            <div class="sidebar-card-value" style="font-family: monospace;">{st.session_state.session_id}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -236,7 +293,7 @@ with st.sidebar:
 
     col_btn1, col_btn2 = st.columns(2)
     with col_btn1:
-        if st.button("🔄 Reset Chat", use_container_width=True):
+        if st.button("🔄 Clear Chat", use_container_width=True):
             st.session_state.messages = []
             st.rerun()
     with col_btn2:
@@ -248,52 +305,52 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("#### 🛠️ System Components")
 
-    # Component 1: Ollama Model
+    # 1. LLM Model Card
     st.markdown(
         f"""
-        <div class="status-card">
-            <div class="status-header">LLM Engine (Ollama)</div>
-            <div class="status-value">{settings.llm_model}</div>
-            <small style="color: #64748B;">Embedding: {settings.embedding_model}</small>
+        <div class="sidebar-card">
+            <div class="sidebar-card-label">LLM Engine (Ollama)</div>
+            <div class="sidebar-card-value">{settings.llm_model}</div>
+            <div class="sidebar-card-sub">Embeddings: {settings.embedding_model}</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # Component 2: RAG Vector Store
+    # 2. Chroma Vector DB Card
     st.markdown(
         f"""
-        <div class="status-card">
-            <div class="status-header">Unstructured RAG (Chroma)</div>
-            <div class="status-value">{topology['chroma_count']} Document Chunks</div>
-            <small style="color: #64748B;">Collection: support_docs</small>
+        <div class="sidebar-card">
+            <div class="sidebar-card-label">Unstructured RAG (Chroma)</div>
+            <div class="sidebar-card-value">{topology['chroma_count']} Document Chunks</div>
+            <div class="sidebar-card-sub">Collection: support_docs</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # Component 3: KAG Knowledge Graph
+    # 3. KAG Knowledge Graph Card
     st.markdown(
         f"""
-        <div class="status-card">
-            <div class="status-header">Relational KAG (NetworkX)</div>
-            <div class="status-value">{topology['graph_nodes']} Nodes & {topology['graph_edges']} Edges</div>
-            <small style="color: #64748B;">Entities: Customer, Order, Product, Issue, Agent</small>
+        <div class="sidebar-card">
+            <div class="sidebar-card-label">Relational KAG (NetworkX)</div>
+            <div class="sidebar-card-value">{topology['graph_nodes']} Nodes & {topology['graph_edges']} Edges</div>
+            <div class="sidebar-card-sub">Entities: Customer, Order, Product, Issue, Agent</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # Component 4: Escalation Pipeline & Pending Webhooks
+    # 4. Escalation Queue Card
     pending_escalations = repo.get_pending_escalations(limit=50)
     pending_count = len(pending_escalations)
 
     st.markdown(
         f"""
-        <div class="status-card">
-            <div class="status-header">Escalation Webhook Queue</div>
-            <div class="status-value">{pending_count} Pending Items</div>
-            <small style="color: #64748B;">Target: {settings.n8n_webhook_url}</small>
+        <div class="sidebar-card">
+            <div class="sidebar-card-label">Escalation Webhook Queue</div>
+            <div class="sidebar-card-value">{pending_count} Pending Records</div>
+            <div class="sidebar-card-sub">Zero-Loss Local SQLite Retention</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -302,7 +359,7 @@ with st.sidebar:
     if pending_count > 0:
         if st.button("🚀 Flush Pending Retries", use_container_width=True):
             recovered = webhook_client.process_pending_retries()
-            st.success(f"Retried queue: {recovered} successfully sent.")
+            st.success(f"Dispatched {recovered} items.")
             time.sleep(1)
             st.rerun()
 
@@ -322,43 +379,52 @@ with st.sidebar:
         for r, cnt in route_dist.items():
             st.caption(f"- `{r.upper()}`: {cnt} queries")
     else:
-        st.caption("No queries executed in this session yet.")
+        st.caption("No queries executed yet.")
 
-
-# --- Main Application Area ---
-st.markdown('<div class="brand-title">SupportSense AI Assistant</div>', unsafe_allow_html=True)
+# --- Main App Header ---
 st.markdown(
-    '<div class="brand-subtitle">'
-    'Enterprise customer support assistant demonstrating hybrid <strong>RAG + KAG</strong> architecture, '
-    'agentic router decision trees, sub-millisecond greeting filters, and zero-loss escalation fallback.'
-    '</div>',
+    """
+    <div class="brand-header">
+        <div class="brand-title-wrap">
+            <span class="brand-title">SupportSense AI</span>
+        </div>
+        <div class="brand-pill">
+            <span class="brand-pill-dot"></span>
+            Operational
+        </div>
+    </div>
+    <div class="brand-subtitle">
+        Enterprise Customer Support Assistant powered by <strong>Hybrid RAG + KAG</strong> agentic orchestration, 
+        sub-millisecond fast-path greetings, and zero-loss human escalation.
+    </div>
+    """,
     unsafe_allow_html=True,
 )
 
-# --- PRD Benchmark Quick Scenarios ---
-st.markdown("##### ⚡ Quick Test Scenarios (PRD Section 17):")
+# --- PRD Acceptance Benchmark Scenarios ---
+st.markdown('<div class="scenario-title">⚡ Quick Test Scenarios (PRD Section 17):</div>', unsafe_allow_html=True)
 cols = st.columns(5)
 
 scenarios = [
-    ("📄 Refund Policy", "What is your refund policy?", "RAG documentation retrieval"),
-    ("📦 Order #4521", "Where is my order #4521?", "KAG relational graph traversal"),
-    ("⚡ Damaged + #4521", "My order #4521 arrived damaged, what is your policy and who can help me?", "Hybrid RAG + KAG synthesis"),
-    ("🔒 Security Bypass", "Can you hack into my account to reset my password manually?", "Security escalation trigger"),
-    ("❓ Order #9999999", "Where is my order #9999999?", "Missing order escalation"),
+    ("📄 Refund Policy", "What is your refund policy?", "RAG: Document search & cross-encoder rerank"),
+    ("📦 Order #4521", "Where is my order #4521?", "KAG: Relational graph traversal"),
+    ("⚡ Damaged + #4521", "My order #4521 arrived damaged, what is your policy and who can help me?", "Hybrid: RAG policy + KAG agent traversal"),
+    ("🔒 Security Check", "Can you hack into my account to reset my password manually?", "Escalation: Guardrail bypass detection"),
+    ("❓ Order #9999999", "Where is my order #9999999?", "Escalation: Unknown entity fallback"),
 ]
 
 for i, (label, prompt_val, help_text) in enumerate(scenarios):
     with cols[i]:
-        if st.button(label, help=help_text, use_container_width=True, key=f"quick_btn_{i}"):
+        if st.button(label, help=help_text, use_container_width=True, key=f"btn_scenario_{i}"):
             submit_query(prompt_val)
             st.rerun()
 
 st.markdown("---")
 
-# --- Chat Stream Rendering ---
+# --- Chat Messages Stream ---
 if not st.session_state.messages:
     st.info(
-        "👋 Welcome! Click one of the quick test scenarios above or type any inquiry below to test the agent router.",
+        "👋 Welcome! Click any quick test scenario above or enter a question below to test the agent router.",
         icon="ℹ️",
     )
 
@@ -369,7 +435,7 @@ for msg in st.session_state.messages:
     with st.chat_message(role):
         st.markdown(content)
 
-        # Assistant Telemetry Bar & Context Inspector
+        # Assistant Telemetry & Grounding Inspector
         if role == "assistant" and "route_taken" in msg:
             route = msg.get("route_taken", "direct").lower()
             confidence = msg.get("confidence_score", 0.0)
@@ -378,13 +444,12 @@ for msg in st.session_state.messages:
             escalated = msg.get("escalated", False)
             context = msg.get("context_used", "")
 
-            # Badge Styling
             badge_class = f"badge-{route}" if route in ["rag", "kag", "hybrid", "direct", "escalated"] else "badge-metric"
-            esc_status = "⚠️ ESCALATED" if escalated else "NORMAL"
 
+            # Render Badges
             st.markdown(
                 f"""
-                <div style="margin-top: 0.6rem; margin-bottom: 0.4rem;">
+                <div class="badge-bar">
                     <span class="badge {badge_class}">{route}</span>
                     <span class="badge badge-metric">Conf: {confidence * 100:.0f}%</span>
                     <span class="badge badge-metric">{latency:.1f} ms</span>
@@ -394,20 +459,34 @@ for msg in st.session_state.messages:
                 unsafe_allow_html=True,
             )
 
-            # Grounding & Context Drawer
-            if context and context.strip():
-                with st.expander(f"🔍 Grounding & Context Inspector (Trace {trace_id})", expanded=False):
-                    st.markdown(
-                        f"""
-                        <div class="inspect-box">
-                            <pre style="white-space: pre-wrap; font-size: 0.8rem; margin: 0; color: #334155;">{context}</pre>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+            # Grounding & Context Inspector (Clean Dark-Theme Rendering with Syntax Highlighting)
+            if context and context.strip() and context != "Direct greeting handler.":
+                with st.expander(f"🔍 Grounding & Context Inspector (Trace: {trace_id})", expanded=False):
+                    # Check if hybrid or combined
+                    has_kag = "=== RELATIONAL DATA (KAG) ===" in context
+                    has_rag = "=== POLICY & DOCUMENTATION (RAG) ===" in context
+
+                    if has_kag and has_rag:
+                        tab1, tab2 = st.tabs(["🕸️ Relational Graph (KAG)", "📄 Retrieved Documentation (RAG)"])
+                        with tab1:
+                            kag_content = context.split("=== POLICY & DOCUMENTATION (RAG) ===")[0].replace("=== RELATIONAL DATA (KAG) ===", "").strip()
+                            st.code(kag_content, language="markdown")
+                        with tab2:
+                            rag_content = context.split("=== POLICY & DOCUMENTATION (RAG) ===")[1].strip()
+                            st.code(rag_content, language="markdown")
+                    elif has_kag:
+                        kag_content = context.replace("=== RELATIONAL DATA (KAG) ===", "").strip()
+                        st.markdown("**Relational Graph Traversal Result:**")
+                        st.code(kag_content, language="markdown")
+                    elif has_rag:
+                        rag_content = context.replace("=== POLICY & DOCUMENTATION (RAG) ===", "").strip()
+                        st.markdown("**Retrieved Documentation Chunks:**")
+                        st.code(rag_content, language="markdown")
+                    else:
+                        st.code(context, language="markdown")
 
 # --- User Input Box ---
-user_input = st.chat_input("Type your question or request (e.g. 'What is the warranty policy?' or 'Where is order #4521?')...")
+user_input = st.chat_input("Ask about order status, warranty, returns, or company policies...")
 if user_input:
     submit_query(user_input)
     st.rerun()
