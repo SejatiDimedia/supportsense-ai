@@ -17,7 +17,7 @@ fi
 
 echo "[1/2] Checking database and document collection..."
 python3 -c "from app.persistence.db import init_db; init_db()"
-python3 -c "from app.rag.embedder import VectorStoreManager; from pathlib import Path; VectorStoreManager().ingest_documents(Path('data/docs'))"
+python3 -c "from app.rag.embedder import VectorStoreManager; VectorStoreManager().ingest_documents()"
 
 echo "[2/2] Launching Streamlit UI..."
 streamlit run ui/streamlit_app.py

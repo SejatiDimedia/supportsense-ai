@@ -56,7 +56,11 @@ class VectorStoreManager:
             metadata={"description": "Customer Support FAQ, Policies, and Manuals"}
         )
 
-    def ingest_documents(self, docs_dir: Path, force_reload: bool = False) -> int:
+    def ingest_from_postgres(self, force_reload: bool = False) -> int:
+        """
+        Ingests support documents directly from PostgreSQL (with SQLite fallback)
+        into ChromaDB vector collection.
+        """
         collection = self.get_or_create_collection()
         current_count = collection.count()
 
@@ -64,27 +68,46 @@ class VectorStoreManager:
             logger.info(f"Collection '{self.collection_name}' already contains {current_count} documents. Skipping re-ingestion.")
             return current_count
 
+        conn = None
+        rows = []
+        try:
+            import psycopg2
+            pg_url = getattr(settings, "postgres_url", "postgresql://postgres:postgres@localhost:5433/supportsense")
+            conn = psycopg2.connect(pg_url, connect_timeout=3)
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, source, category, section, content FROM support_documents ORDER BY id;")
+            rows = cursor.fetchall()
+            conn.close()
+            logger.info(f"Retrieved {len(rows)} documents from PostgreSQL table 'support_documents'.")
+        except Exception as e:
+            logger.warning(f"Could not connect to PostgreSQL for RAG documents ({e}), falling back to SQLite...")
+            try:
+                import sqlite3
+                db_path = Path("data/relational_sample.db")
+                if db_path.exists():
+                    conn = sqlite3.connect(str(db_path))
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT id, source, category, section, content FROM support_documents ORDER BY id;")
+                    rows = cursor.fetchall()
+                    conn.close()
+                    logger.info(f"Retrieved {len(rows)} documents from SQLite table 'support_documents'.")
+            except Exception as se:
+                logger.error(f"Error querying SQLite for support documents: {se}")
+
+        if not rows:
+            logger.warning("No support documents retrieved from database.")
+            return 0
+
         if force_reload and current_count > 0:
             logger.info(f"Force reload active. Resetting collection '{self.collection_name}'...")
             self.client.delete_collection(self.collection_name)
             collection = self.get_or_create_collection()
 
-        chunker = MarkdownSectionChunker(max_chunk_chars=1200, overlap_chars=150)
-        all_chunks: List[DocumentChunk] = []
+        ids = [r[0] for r in rows]
+        metadatas = [{"source": r[1], "category": r[2], "section": r[3]} for r in rows]
+        documents = [r[4] for r in rows]
 
-        for file_path in sorted(docs_dir.glob("*.md")):
-            chunks = chunker.chunk_file(file_path)
-            all_chunks.extend(chunks)
-
-        if not all_chunks:
-            logger.warning(f"No documents found to ingest in {docs_dir}")
-            return 0
-
-        ids = [c.id for c in all_chunks]
-        documents = [c.text for c in all_chunks]
-        metadatas = [c.metadata for c in all_chunks]
-
-        logger.info(f"Generating embeddings for {len(all_chunks)} chunks via Ollama ({self.embedder.model})...")
+        logger.info(f"Generating embeddings for {len(documents)} database documents via Ollama ({self.embedder.model})...")
         embeddings = self.embedder.get_embeddings_batch(documents)
 
         collection.upsert(
@@ -95,5 +118,63 @@ class VectorStoreManager:
         )
 
         final_count = collection.count()
-        logger.info(f"Ingestion completed. Total documents in Chroma: {final_count}")
+        logger.info(f"Database document ingestion completed. Total documents in Chroma: {final_count}")
         return final_count
+
+    def ingest_documents(self, docs_dir: Optional[Path] = None, force_reload: bool = False) -> int:
+        """
+        Ingests documents into Chroma vector store.
+        Prioritizes loading directly from PostgreSQL (support_documents table).
+        Falls back to local markdown directory if database has no records.
+        """
+        try:
+            count = self.ingest_from_postgres(force_reload=force_reload)
+            if count > 0:
+                return count
+        except Exception as e:
+            logger.warning(f"Database ingestion failed or skipped: {e}. Checking fallback markdown directory...")
+
+        if docs_dir and docs_dir.exists():
+            collection = self.get_or_create_collection()
+            current_count = collection.count()
+
+            if current_count > 0 and not force_reload:
+                logger.info(f"Collection '{self.collection_name}' already contains {current_count} documents. Skipping re-ingestion.")
+                return current_count
+
+            if force_reload and current_count > 0:
+                logger.info(f"Force reload active. Resetting collection '{self.collection_name}'...")
+                self.client.delete_collection(self.collection_name)
+                collection = self.get_or_create_collection()
+
+            chunker = MarkdownSectionChunker(max_chunk_chars=1200, overlap_chars=150)
+            all_chunks: List[DocumentChunk] = []
+
+            for file_path in sorted(docs_dir.glob("*.md")):
+                chunks = chunker.chunk_file(file_path)
+                all_chunks.extend(chunks)
+
+            if not all_chunks:
+                logger.warning(f"No documents found to ingest in {docs_dir}")
+                return 0
+
+            ids = [c.id for c in all_chunks]
+            documents = [c.text for c in all_chunks]
+            metadatas = [c.metadata for c in all_chunks]
+
+            logger.info(f"Generating embeddings for {len(all_chunks)} chunks via Ollama ({self.embedder.model})...")
+            embeddings = self.embedder.get_embeddings_batch(documents)
+
+            collection.upsert(
+                ids=ids,
+                documents=documents,
+                embeddings=embeddings,
+                metadatas=metadatas
+            )
+
+            final_count = collection.count()
+            logger.info(f"Ingestion completed. Total documents in Chroma: {final_count}")
+            return final_count
+
+        return 0
+

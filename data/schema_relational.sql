@@ -3,6 +3,7 @@
 -- Compatible with: PostgreSQL, MySQL 8+, and SQLite
 -- ============================================================================
 
+DROP TABLE IF EXISTS support_documents;
 DROP TABLE IF EXISTS issues;
 DROP TABLE IF EXISTS order_items;
 DROP TABLE IF EXISTS orders;
@@ -162,3 +163,73 @@ INSERT INTO issues (id, order_id, issue_type, issue_status, assigned_agent_id, n
 ('ISSUE-007', 'ORD-4530', 'Missing Box Accessories', 'Supplementary Parcel Dispatched', 'AGENT-002', 'USB-C host cable was missing from package; replacement dispatched with SiCepat.'),
 ('ISSUE-008', 'ORD-4534', 'Package Lost by Courier', 'Insurance Claim & Full Refund', 'AGENT-002', 'Courier confirmed package lost at hub; full refund of Rp 1.899.000 approved.')
 ON CONFLICT (id) DO UPDATE SET issue_type = EXCLUDED.issue_type, issue_status = EXCLUDED.issue_status, assigned_agent_id = EXCLUDED.assigned_agent_id, notes = EXCLUDED.notes;
+
+
+-- ============================================================================
+-- 7. SUPPORT DOCUMENTS TABLE (RAG Knowledge Base in PostgreSQL)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS support_documents (
+    id VARCHAR(100) PRIMARY KEY,
+    source VARCHAR(100) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    section VARCHAR(200) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO support_documents (id, source, category, section, content) VALUES
+('faq.md_000', 'faq.md', 'FAQ', 'What are your customer support operating hours?', '## What are your customer support operating hours?
+Our support team is available Monday through Friday, from 9:00 AM to 6:00 PM EST. Inquiries submitted outside these hours or during public holidays will be reviewed on the next business day.'),
+('faq.md_001', 'faq.md', 'FAQ', 'How can I track my general inquiry or support ticket?', '## How can I track my general inquiry or support ticket?
+Every inquiry logged in our system is assigned a unique reference ID. You can check the status at any time by asking our support assistant with your order number or reference ID, or by checking your registered email.'),
+('faq.md_002', 'faq.md', 'FAQ', 'How long does standard shipping take?', '## How long does standard shipping take?
+Standard domestic shipping usually takes between 3 to 5 business days. Express shipping takes 1 to 2 business days. Tracking numbers are generated and emailed as soon as the package leaves our warehouse.'),
+('faq.md_003', 'faq.md', 'FAQ', 'Can I change my delivery address after placing an order?', '## Can I change my delivery address after placing an order?
+Address changes are permitted within 2 hours of order placement. Once an order enters the fulfillment stage or has been picked up by the carrier, the address cannot be modified directly, and a redirect request must be filed through our support team.'),
+('faq.md_004', 'faq.md', 'FAQ', 'How do I update my profile details?', '## How do I update my profile details?
+You can update your personal contact details, email address, and notification preferences by logging into your account dashboard under "Account Settings".'),
+('faq.md_005', 'faq.md', 'FAQ', 'What should I do if I suspect unauthorized activity on my account?', '## What should I do if I suspect unauthorized activity on my account?
+Please immediately request a password reset via the login screen. For safety reasons, automated agents and standard representatives cannot directly view, alter, or bypass your password credentials. Suspicious activity reports are automatically escalated to our Security & Fraud Prevention team.'),
+('policy.md_000', 'policy.md', 'Policy', 'Eligibility for Refunds', '## Eligibility for Refunds
+We offer a 30-day money-back guarantee on all eligible products purchased directly from our official store. To qualify for a full refund:
+- The return request must be initiated within 30 calendar days from the delivery date.
+- Items must be returned in their original packaging, in new or unused condition, complete with all accessories, manuals, and documentation.
+- Proof of purchase (Order number and receipt) is required.'),
+('policy.md_001', 'policy.md', 'Policy', 'Refund Processing Timeline', '## Refund Processing Timeline
+Once our warehouse inspects and verifies the returned items (usually within 2 to 4 business days of receipt):
+- Approved refunds are credited back to the original payment method.
+- Credit card refunds take 5 to 10 business days to reflect on your statement depending on your banking provider.
+- Shipping fees are non-refundable unless the return is due to our error or product defect.'),
+('policy.md_002', 'policy.md', 'Policy', 'Immediate Action Protocol', '## Immediate Action Protocol
+If your package or item arrives damaged, dented, broken, or defective:
+- You must report the damage within 48 hours of delivery.
+- Please provide clear photos or a short video demonstrating the packaging and product defect.
+- A replacement item will be expedited to you at zero additional cost, or a full refund will be initiated if a replacement is unavailable.
+- A dedicated Customer Support Representative will be assigned to coordinate the carrier claim and courier pickup of the damaged item.'),
+('policy.md_003', 'policy.md', 'Policy', 'Cancellation Window', '## Cancellation Window
+Orders can be canceled free of charge before they enter the shipping and dispatch phase (typically within 1 to 2 hours of payment). Once shipped, the order cannot be recalled from transit and must follow the standard 30-day return process upon receipt.'),
+('product_manual.md_000', 'product_manual.md', 'Manual', 'Warranty Length', '## Warranty Length
+All hardware products purchased from our authorized channels come with a comprehensive Limited Manufacturer Warranty:
+- **Standard Electronics & Smart Devices**: 24 months (2 years) from the date of purchase.
+- **Accessories & Cables**: 12 months (1 year) from the date of purchase.
+- **Consumables & Wearables**: 6 months limited coverage.'),
+('product_manual.md_001', 'product_manual.md', 'Manual', 'What is Covered', '## What is Covered
+- Mechanical, electrical, and internal component failures occurring during standard and proper usage.
+- Manufacturing flaws, dead pixels (more than 3), and firmware anomalies not caused by user modification.
+- Repair labor and genuine replacement parts.'),
+('product_manual.md_002', 'product_manual.md', 'Manual', 'What is Not Covered', '## What is Not Covered
+- Accidental drops, physical impact, liquid submersion, fire damage, or theft.
+- Unauthorized disassembly, third-party repairs, or jailbreaking/rooting firmware modifications.
+- Normal cosmetic wear and tear (scratches, dents, fading).'),
+('product_manual.md_003', 'product_manual.md', 'Manual', 'How to File a Claim', '## How to File a Claim
+To file a warranty service request:
+1. Locate your original order number (e.g., #4521) and the device serial number located on the underside or packaging.
+2. Contact our support team via live chat or submit a ticket detailing the symptom.
+3. Our technical team will issue a Prepaid Return Merchandise Authorization (RMA) shipping label.
+4. Repack the device securely and drop it off at an authorized carrier drop-point.
+5. Repairs or replacements are processed and shipped back within 7 to 10 business days.')
+ON CONFLICT (id) DO UPDATE SET 
+    source = EXCLUDED.source, 
+    category = EXCLUDED.category, 
+    section = EXCLUDED.section, 
+    content = EXCLUDED.content;

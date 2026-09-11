@@ -185,9 +185,9 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Ingest Documents into Vector Store
+### 4. Ingest Documents into Vector Store (from PostgreSQL)
 ```bash
-python3 -c "from app.rag.embedder import VectorStoreManager; from pathlib import Path; VectorStoreManager().ingest_documents(Path('data/docs'))"
+python3 -c "from app.rag.embedder import VectorStoreManager; VectorStoreManager().ingest_from_postgres()"
 ```
 
 ### 5. Launch Application
