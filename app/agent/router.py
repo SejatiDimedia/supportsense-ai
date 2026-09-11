@@ -48,8 +48,27 @@ class AgentRouter:
 
         logger.info(f"[{trace_id}] Received user message: '{user_message}' (session: {session_id})")
 
-        # 1. Deteksi cepat keamanan (Security check sederhana untuk bypass / hack)
+        # 1. Deteksi cepat sapaan (Greeting pre-filter untuk rute direct)
         lower_msg = user_message.lower()
+        greetings = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "halo"]
+        clean_text = lower_msg.strip("!.,? ")
+        is_greeting = clean_text in greetings or any(g in lower_msg for g in ["hello", "good morning", "good afternoon", "good evening", "hi there"])
+        substantive_keywords = ["order", "refund", "warranty", "ship", "product", "policy", "damage", "broken", "delay", "ticket", "#"]
+        has_substantive_question = any(k in lower_msg for k in substantive_keywords)
+
+        if is_greeting and not has_substantive_question:
+            latency_ms = round((time.time() - start_time) * 1000, 2)
+            return ChatResult(
+                trace_id=trace_id,
+                answer="Hello! Welcome to SupportSense AI. How can I assist you with your orders, products, or company policies today?",
+                route_taken="direct",
+                confidence_score=1.0,
+                escalated=False,
+                latency_ms=latency_ms,
+                context_used="Direct greeting handler."
+            )
+
+        # 2. Deteksi cepat keamanan (Security check sederhana untuk bypass / hack)
         if any(keyword in lower_msg for keyword in ["hack", "bypass", "reset password manually", "override database"]):
             latency_ms = round((time.time() - start_time) * 1000, 2)
             return ChatResult(
