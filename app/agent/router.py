@@ -319,6 +319,49 @@ class AgentRouter:
             escalated = True
             route_taken = "escalated"
 
+        # Strict Out-of-Context Guardrail:
+        # Jika tidak ada tool yang dipanggil, tidak ada konteks RAG/KAG, dan tidak ada intensi customer support
+        if not tool_names and not kag_context and not rag_context and not has_substantive_question and not order_in_scope:
+            latency_ms = round((time.time() - start_time) * 1000, 2)
+            answer = (
+                "Maaf, saya adalah asisten AI khusus customer support SupportSense AI. "
+                "Layanan saya terbatas hanya untuk menjawab pertanyaan terkait layanan pelanggan kami: "
+                "informasi pesanan (#XXXX), produk, status pengiriman, garansi, komplain paket, "
+                "serta kebijakan retur dan pengembalian dana. "
+                "Pertanyaan di luar konteks layanan pelanggan tidak dapat saya jawab. "
+                "Apakah ada yang bisa saya bantu terkait pesanan atau produk kami?"
+            )
+            metrics.record_request("direct", latency_ms)
+            try:
+                repo.save_message(
+                    trace_id=trace_id,
+                    session_id=effective_session,
+                    role="user",
+                    message=user_message,
+                    route_taken="direct",
+                    confidence_score=1.0
+                )
+                repo.save_message(
+                    trace_id=trace_id,
+                    session_id=effective_session,
+                    role="assistant",
+                    message=answer,
+                    route_taken="direct",
+                    confidence_score=1.0
+                )
+            except Exception as e:
+                logger.error(f"Error persisting out-of-context refusal to SQLite: {e}", exc_info=True)
+
+            return ChatResult(
+                trace_id=trace_id,
+                answer=answer,
+                route_taken="direct",
+                confidence_score=1.0,
+                escalated=False,
+                latency_ms=latency_ms,
+                context_used="Strict out-of-context guardrail: inquiry has no customer support context."
+            )
+
         # 7. Gabungkan Konteks & Sintesis Jawaban Akhir
         combined_context = ""
         if kag_context:
