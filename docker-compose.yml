@@ -24,6 +24,21 @@ services:
       - n8n_data:/home/node/.n8n
     restart: unless-stopped
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: supportsense_postgres
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=supportsense
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./data/schema_relational.sql:/docker-entrypoint-initdb.d/01-init.sql
+    restart: unless-stopped
+
 volumes:
   ollama_data:
   n8n_data:
+  postgres_data:
