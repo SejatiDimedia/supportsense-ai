@@ -18,6 +18,20 @@ async def test_chat_endpoint_greeting():
     assert data["latency_ms"] > 0
 
 @pytest.mark.asyncio
+async def test_chat_endpoint_indonesian_greeting():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        response = await ac.post("/chat", json={"message": "Hai selamat malam", "session_id": "sess_test_id_greeting"})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["route_taken"] == "direct"
+    assert data["confidence_score"] == 1.0
+    assert data["escalated"] is False
+    assert "SupportSense AI" in data["answer"]
+    assert data["latency_ms"] < 100.0  # Instant response (< 100ms)
+
+@pytest.mark.asyncio
 async def test_chat_endpoint_security_escalation():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:

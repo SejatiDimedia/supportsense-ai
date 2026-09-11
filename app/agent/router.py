@@ -72,18 +72,32 @@ class AgentRouter:
         # 1. Deteksi cepat sapaan / closing (Greeting pre-filter untuk rute direct)
         lower_msg = user_message.lower()
         greetings = [
-            "hi", "hello", "hey", "good morning", "good afternoon", "good evening", "halo",
+            "hi", "hello", "hey", "halo", "hai",
+            "good morning", "good afternoon", "good evening", "good night",
+            "selamat pagi", "selamat siang", "selamat sore", "selamat malam",
             "terima kasih", "makasih", "thank you", "thanks"
         ]
         clean_text = lower_msg.strip("!.,? ")
-        is_greeting = clean_text in greetings or any(g in lower_msg for g in ["hello", "good morning", "good afternoon", "good evening", "hi there", "terima kasih"])
-        substantive_keywords = ["order", "refund", "warranty", "ship", "product", "policy", "damage", "broken", "delay", "ticket", "#", "agen", "kurir", "resi", "barang"]
+        is_greeting = clean_text in greetings or any(
+            g in lower_msg for g in [
+                "hello", "good morning", "good afternoon", "good evening", "hi there",
+                "halo", "hai", "selamat pagi", "selamat siang", "selamat sore", "selamat malam",
+                "terima kasih", "makasih"
+            ]
+        )
+        substantive_keywords = [
+            "order", "refund", "warranty", "ship", "product", "policy", "damage",
+            "broken", "delay", "ticket", "#", "agen", "kurir", "resi", "barang",
+            "status", "pesanan", "retur", "garansi"
+        ]
         has_substantive_question = any(k in lower_msg for k in substantive_keywords)
 
         if is_greeting and not has_substantive_question:
             latency_ms = round((time.time() - start_time) * 1000, 2)
             if any(t in lower_msg for t in ["terima kasih", "makasih", "thank"]):
                 answer = "Sama-sama! Senang bisa membantu Anda. Jika ada pertanyaan lain seputar pesanan atau layanan kami, jangan ragu untuk bertanya."
+            elif any(t in lower_msg for t in ["halo", "hai", "selamat pagi", "selamat siang", "selamat sore", "selamat malam"]):
+                answer = "Halo! Selamat datang di SupportSense AI. Ada yang bisa saya bantu terkait pesanan, produk, atau kebijakan kami hari ini?"
             else:
                 answer = "Hello! Welcome to SupportSense AI. How can I assist you with your orders, products, or company policies today?"
             metrics.record_request("direct", latency_ms)
