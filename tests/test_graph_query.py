@@ -14,8 +14,8 @@ def test_query_order_4521_with_delay_and_agent():
 
     assert result["found"] is True
     assert result["order_number"] == "#4521"
-    assert "John Doe" in result["summary"]
-    assert "Apex Smartwatch Pro" in result["summary"]
+    assert "Andi Pratama" in result["summary"]
+    assert "Ultra Wireless Headphones Pro" in result["summary"]
     assert "Budi Santoso" in result["summary"]
     assert "FedEx" in result["summary"]
     assert "Shipping Delayed" in result["summary"]
@@ -30,9 +30,9 @@ def test_query_order_4522_delivered_no_issues():
 
     assert result["found"] is True
     assert result["order_number"] == "#4522"
-    assert "Sarah Connor" in result["summary"]
+    assert "Andi Pratama" in result["summary"]
     assert "Delivered" in result["summary"]
-    assert "No reported issues" in result["summary"]
+    assert "Ultra Wireless Headphones Pro" in result["summary"]
 
 def test_query_order_4534_relational_fallback():
     engine = GraphQueryEngine()

@@ -4,19 +4,19 @@
       "id": "cust_101",
       "label": "Customer",
       "properties": {
-        "name": "John Doe",
-        "email": "john.doe@example.com",
-        "phone": "+1-555-0199",
-        "tier": "Gold"
+        "name": "Andi Pratama",
+        "email": "andi.pratama@example.com",
+        "phone": "+6281234567801",
+        "tier": "VIP"
       }
     },
     {
       "id": "cust_102",
       "label": "Customer",
       "properties": {
-        "name": "Sarah Connor",
-        "email": "sarah.c@example.com",
-        "phone": "+1-555-0234",
+        "name": "Dewi Lestari",
+        "email": "dewi.lestari@example.com",
+        "phone": "+6281234567802",
         "tier": "Standard"
       }
     },
@@ -28,9 +28,9 @@
         "order_date": "2026-09-02",
         "status": "shipping_delayed",
         "shipping_carrier": "FedEx",
-        "tracking_number": "FDX-8829104",
+        "tracking_number": "TRK-FDX-9988",
         "estimated_delivery": "2026-09-15",
-        "total_amount": 199.99
+        "total_amount": 1899000
       }
     },
     {
@@ -40,21 +40,21 @@
         "order_number": "#4522",
         "order_date": "2026-09-05",
         "status": "delivered",
-        "shipping_carrier": "DHL",
-        "tracking_number": "DHL-4401928",
+        "shipping_carrier": "DHL Express",
+        "tracking_number": "TRK-DHL-1122",
         "delivered_date": "2026-09-08",
-        "total_amount": 79.50
+        "total_amount": 1899000
       }
     },
     {
       "id": "prod_01",
       "label": "Product",
       "properties": {
-        "name": "Apex Smartwatch Pro",
-        "sku": "APX-SW-01",
-        "category": "Smart Wearables",
+        "name": "Ultra Wireless Headphones Pro",
+        "sku": "SKU-WF-PRO",
+        "category": "Audio",
         "warranty_months": 24,
-        "price": 199.99
+        "price": 1899000
       }
     },
     {

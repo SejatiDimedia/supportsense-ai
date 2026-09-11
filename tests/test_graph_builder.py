@@ -20,7 +20,7 @@ def test_find_order():
     assert order2 is not None
     assert order1["id"] == "ord_4521"
     assert order1["status"] == "shipping_delayed"
-    assert order1["tracking_number"] == "FDX-8829104"
+    assert order1["tracking_number"] == "TRK-FDX-9988"
 
 def test_order_to_agent_traversal():
     kg = SupportKnowledgeGraph()

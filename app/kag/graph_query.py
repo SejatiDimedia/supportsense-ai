@@ -49,17 +49,20 @@ class GraphQueryEngine:
         """
         Traverses all relations connected to the given order number
         and generates a clean, structured context string for LLM ingestion.
-        Checks Knowledge Graph first; if not present, queries live Relational Database.
+        Checks live Relational Database (PostgreSQL / SQLite) first;
+        falls back to in-memory Knowledge Graph if database is not available.
         """
+        # 1. Cek live relational database (PostgreSQL / SQLite) sebagai sumber utama
+        if self.sql_engine:
+            sql_res = self.sql_engine.query_order_context(order_num)
+            if sql_res.get("found"):
+                logger.info(f"Order '{order_num}' found in relational database ({sql_res.get('engine')}).")
+                return sql_res
+
+        # 2. Fallback ke graph in-memory
         order = self.kg.find_order(order_num)
         if not order:
-            if self.sql_engine:
-                sql_res = self.sql_engine.query_order_context(order_num)
-                if sql_res.get("found"):
-                    logger.info(f"Order '{order_num}' found in relational database ({sql_res.get('engine')}).")
-                    return sql_res
-
-            logger.info(f"Order '{order_num}' not found in knowledge graph or relational database.")
+            logger.info(f"Order '{order_num}' not found in relational database or knowledge graph.")
             return {
                 "found": False,
                 "order_number": order_num,
