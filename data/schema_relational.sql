@@ -3,12 +3,12 @@
 -- Compatible with: PostgreSQL, MySQL 8+, and SQLite
 -- ============================================================================
 
-DROP TABLE IF EXISTS issues CASCADE;
-DROP TABLE IF EXISTS order_items CASCADE;
-DROP TABLE IF EXISTS orders CASCADE;
-DROP TABLE IF EXISTS products CASCADE;
-DROP TABLE IF EXISTS agents CASCADE;
-DROP TABLE IF EXISTS customers CASCADE;
+DROP TABLE IF EXISTS issues;
+DROP TABLE IF EXISTS order_items;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS agents;
+DROP TABLE IF EXISTS customers;
 
 -- 1. Customers Table
 CREATE TABLE IF NOT EXISTS customers (

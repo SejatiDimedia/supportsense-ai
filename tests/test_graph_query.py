@@ -34,6 +34,17 @@ def test_query_order_4522_delivered_no_issues():
     assert "Delivered" in result["summary"]
     assert "No reported issues" in result["summary"]
 
+def test_query_order_4534_relational_fallback():
+    engine = GraphQueryEngine()
+    result = engine.query_order_context("#4534")
+
+    assert result["found"] is True
+    assert result["order_number"] == "#4534"
+    assert "Ahmad Fauzi" in result["summary"]
+    assert "Lost in Transit" in result["summary"]
+    assert "Siti Rahma" in result["summary"]
+    assert "data" in result
+
 def test_query_order_not_found():
     engine = GraphQueryEngine()
     result = engine.query_order_context("#9999999")

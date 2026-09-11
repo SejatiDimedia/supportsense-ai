@@ -28,20 +28,38 @@ def extract_order_number(text: str) -> Optional[str]:
 
 class GraphQueryEngine:
     """
-    High-level query engine for the Knowledge Graph.
+    High-level query engine for the Knowledge Graph and Relational Database.
     Traverses relational paths: Customer -> Order -> Product -> Issue -> Agent.
+    Falls back seamlessly to SQLRelationalQueryEngine (PostgreSQL / SQLite)
+    for orders seeded into the relational database.
     """
-    def __init__(self, knowledge_graph: Optional[SupportKnowledgeGraph] = None):
+    def __init__(
+        self,
+        knowledge_graph: Optional[SupportKnowledgeGraph] = None,
+        sql_engine: Optional[Any] = None
+    ):
         self.kg = knowledge_graph or SupportKnowledgeGraph()
+        if sql_engine is None:
+            from app.kag.sql_query import SQLRelationalQueryEngine
+            self.sql_engine = SQLRelationalQueryEngine()
+        else:
+            self.sql_engine = sql_engine
 
     def query_order_context(self, order_num: str) -> Dict[str, Any]:
         """
         Traverses all relations connected to the given order number
         and generates a clean, structured context string for LLM ingestion.
+        Checks Knowledge Graph first; if not present, queries live Relational Database.
         """
         order = self.kg.find_order(order_num)
         if not order:
-            logger.info(f"Order '{order_num}' not found in knowledge graph.")
+            if self.sql_engine:
+                sql_res = self.sql_engine.query_order_context(order_num)
+                if sql_res.get("found"):
+                    logger.info(f"Order '{order_num}' found in relational database ({sql_res.get('engine')}).")
+                    return sql_res
+
+            logger.info(f"Order '{order_num}' not found in knowledge graph or relational database.")
             return {
                 "found": False,
                 "order_number": order_num,

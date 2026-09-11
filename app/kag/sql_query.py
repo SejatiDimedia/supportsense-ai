@@ -20,10 +20,16 @@ class SQLRelationalQueryEngine:
     """
     def __init__(
         self,
-        pg_url: str = os.getenv("POSTGRES_URL", "postgresql://postgres:postgres@localhost:5433/supportsense"),
+        pg_url: Optional[str] = None,
         sqlite_path: str = "./data/relational_sample.db"
     ):
-        self.pg_url = pg_url
+        try:
+            from app.config import settings
+            default_pg = getattr(settings, "postgres_url", "postgresql://postgres:postgres@localhost:5433/supportsense")
+        except Exception:
+            default_pg = "postgresql://postgres:postgres@localhost:5433/supportsense"
+
+        self.pg_url = pg_url or os.getenv("POSTGRES_URL", default_pg)
         self.sqlite_path = sqlite_path
         self.use_postgres = self._init_postgres()
         if not self.use_postgres:
@@ -131,12 +137,17 @@ class SQLRelationalQueryEngine:
             f"Current Shipping Status: '{ord_status}' via {carrier} (Tracking: {tracking})."
         ]
 
+        notes_clean = issue_notes.strip() if issue_notes else ""
+        if notes_clean and not notes_clean.endswith("."):
+            notes_clean += "."
+
         if issue_type and agent_name:
             summary_parts.append(
                 f"Reported Issue: {issue_type} (Status: '{issue_status}'). "
-                f"Assigned Support Agent: {agent_name} ({agent_role}, Email: {agent_email}). "
-                f"Notes: {issue_notes}."
+                f"Assigned Support Agent: {agent_name} ({agent_role}, Email: {agent_email})."
             )
+            if notes_clean:
+                summary_parts.append(f"Notes: {notes_clean}")
         elif issue_type:
             summary_parts.append(f"Reported Issue: {issue_type} (Status: '{issue_status}').")
         else:
@@ -146,5 +157,30 @@ class SQLRelationalQueryEngine:
             "found": True,
             "order_number": clean_num,
             "engine": "postgresql" if self.use_postgres else "sqlite",
-            "summary": " ".join(summary_parts)
+            "summary": " ".join(summary_parts),
+            "data": {
+                "order": {
+                    "order_number": ord_num,
+                    "status": ord_status,
+                    "carrier": carrier,
+                    "tracking_number": tracking
+                },
+                "customer": {
+                    "name": cust_name,
+                    "email": cust_email
+                },
+                "products": [{"name": prod_name}] if prod_name else [],
+                "issues": [
+                    {
+                        "issue_type": issue_type,
+                        "status": issue_status,
+                        "notes": issue_notes,
+                        "assigned_agent": {
+                            "name": agent_name,
+                            "role": agent_role,
+                            "email": agent_email
+                        } if agent_name else None
+                    }
+                ] if issue_type else []
+            }
         }

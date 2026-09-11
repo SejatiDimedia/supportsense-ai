@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     chroma_persist_dir: str = "./data/chroma"
     n8n_webhook_url: str = "http://localhost:5678/webhook/escalation"
     database_url: str = "sqlite:///./data/support_assistant.db"
+    postgres_url: str = "postgresql://postgres:postgres@localhost:5433/supportsense"
 
     model_config = SettingsConfigDict(
         env_file=".env",
