@@ -9,6 +9,8 @@ from app.rag.retriever import RAGRetriever
 from app.rag.reranker import CrossEncoderReranker
 from app.kag.graph_query import GraphQueryEngine, extract_order_number
 
+from app.observability.logger import set_trace_id, log_event
+
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -45,8 +47,9 @@ class AgentRouter:
     def process_message(self, user_message: str, session_id: Optional[str] = None) -> ChatResult:
         start_time = time.time()
         trace_id = str(uuid.uuid4())[:8]
+        set_trace_id(trace_id)
 
-        logger.info(f"[{trace_id}] Received user message: '{user_message}' (session: {session_id})")
+        log_event(logger, "message_received", layer="agent.router", message=f"Received user message: '{user_message}' (session: {session_id})")
 
         # 1. Deteksi cepat sapaan (Greeting pre-filter untuk rute direct)
         lower_msg = user_message.lower()
