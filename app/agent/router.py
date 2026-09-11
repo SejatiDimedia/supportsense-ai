@@ -12,6 +12,7 @@ from app.kag.graph_query import GraphQueryEngine, extract_order_number
 from app.observability.logger import set_trace_id, log_event
 from app.observability.metrics import metrics
 from app.persistence.repository import repo
+from app.escalation.confidence import should_escalate, calculate_confidence_score
 from app.escalation.webhook_client import N8nWebhookClient
 
 logger = logging.getLogger(__name__)
@@ -53,8 +54,9 @@ class AgentRouter:
         start_time = time.time()
         trace_id = str(uuid.uuid4())[:8]
         set_trace_id(trace_id)
+        effective_session = session_id or f"sess_{trace_id}"
 
-        log_event(logger, "message_received", layer="agent.router", message=f"Received user message: '{user_message}' (session: {session_id})")
+        log_event(logger, "message_received", layer="agent.router", message=f"Received user message: '{user_message}' (session: {effective_session})")
 
         # 1. Deteksi cepat sapaan (Greeting pre-filter untuk rute direct)
         lower_msg = user_message.lower()
@@ -66,9 +68,31 @@ class AgentRouter:
 
         if is_greeting and not has_substantive_question:
             latency_ms = round((time.time() - start_time) * 1000, 2)
+            answer = "Hello! Welcome to SupportSense AI. How can I assist you with your orders, products, or company policies today?"
+            metrics.record_request("direct", latency_ms)
+            try:
+                repo.save_message(
+                    trace_id=trace_id,
+                    session_id=effective_session,
+                    role="user",
+                    message=user_message,
+                    route_taken="direct",
+                    confidence_score=1.0
+                )
+                repo.save_message(
+                    trace_id=trace_id,
+                    session_id=effective_session,
+                    role="assistant",
+                    message=answer,
+                    route_taken="direct",
+                    confidence_score=1.0
+                )
+            except Exception as e:
+                logger.error(f"Error persisting greeting to SQLite: {e}", exc_info=True)
+
             return ChatResult(
                 trace_id=trace_id,
-                answer="Hello! Welcome to SupportSense AI. How can I assist you with your orders, products, or company policies today?",
+                answer=answer,
                 route_taken="direct",
                 confidence_score=1.0,
                 escalated=False,
@@ -79,11 +103,42 @@ class AgentRouter:
         # 2. Deteksi cepat keamanan (Security check sederhana untuk bypass / hack)
         if any(keyword in lower_msg for keyword in ["hack", "bypass", "reset password manually", "override database"]):
             latency_ms = round((time.time() - start_time) * 1000, 2)
+            answer = "For security and compliance reasons, automated credential resets or manual account overrides cannot be performed via chat. Your request has been escalated to our Security & Fraud Prevention team."
+            confidence = calculate_confidence_score("escalated", has_rag_context=False, is_malicious=True)
+            metrics.record_request("escalated", latency_ms)
+            try:
+                repo.save_message(
+                    trace_id=trace_id,
+                    session_id=effective_session,
+                    role="user",
+                    message=user_message,
+                    route_taken="escalated",
+                    confidence_score=confidence
+                )
+                repo.save_message(
+                    trace_id=trace_id,
+                    session_id=effective_session,
+                    role="assistant",
+                    message=answer,
+                    route_taken="escalated",
+                    confidence_score=confidence
+                )
+                self.webhook.send_escalation_webhook(
+                    trace_id=trace_id,
+                    reason="Security trigger: unauthorized action or injection attempt requested.",
+                    user_message=user_message,
+                    session_id=effective_session,
+                    route_taken="escalated",
+                    confidence_score=confidence
+                )
+            except Exception as e:
+                logger.error(f"Error persisting security escalation to SQLite: {e}", exc_info=True)
+
             return ChatResult(
                 trace_id=trace_id,
-                answer="For security and compliance reasons, automated credential resets or manual account overrides cannot be performed via chat. Your request has been escalated to our Security & Fraud Prevention team.",
+                answer=answer,
                 route_taken="escalated",
-                confidence_score=0.20,
+                confidence_score=confidence,
                 escalated=True,
                 latency_ms=latency_ms,
                 context_used="Security trigger: unauthorized action requested."
@@ -103,6 +158,7 @@ class AgentRouter:
         route_taken = "direct"
         escalated = False
         confidence = 0.85
+        order_found = None
 
         # 3. Eksekusi KAG jika diminta
         if "lookup_relational_data" in tool_names:
@@ -117,9 +173,9 @@ class AgentRouter:
             if order_to_query:
                 kag_result = self.kag.query_order_context(order_to_query)
                 kag_context = kag_result["summary"]
-                if not kag_result["found"]:
+                order_found = kag_result["found"]
+                if not order_found:
                     # Order tidak ada di database relasional kita
-                    confidence = 0.40
                     escalated = True
 
         # 4. Eksekusi RAG jika diminta
@@ -139,23 +195,27 @@ class AgentRouter:
         # 5. Cek apakah ada eskalasi eksplisit
         if "escalate_to_human" in tool_names:
             escalated = True
-            confidence = 0.30
 
-        # 6. Tentukan Rute Final
+        # 6. Tentukan Rute Final & Confidence
         if escalated:
             route_taken = "escalated"
+            confidence = calculate_confidence_score("escalated", has_rag_context=bool(rag_context), order_found=order_found)
         elif rag_context and kag_context:
             route_taken = "hybrid"
-            confidence = 0.95
+            confidence = calculate_confidence_score("hybrid", has_rag_context=True)
         elif kag_context:
             route_taken = "kag"
-            confidence = 0.92
+            confidence = calculate_confidence_score("kag", has_rag_context=False)
         elif rag_context:
             route_taken = "rag"
-            confidence = 0.89
+            confidence = calculate_confidence_score("rag", has_rag_context=True)
         else:
             route_taken = "direct"
             confidence = 0.70
+
+        if should_escalate(confidence, route_taken):
+            escalated = True
+            route_taken = "escalated"
 
         # 7. Gabungkan Konteks & Sintesis Jawaban Akhir
         combined_context = ""
@@ -176,7 +236,6 @@ class AgentRouter:
 
         # Auto-persist conversation & escalation to SQLite database
         try:
-            effective_session = session_id or f"sess_{trace_id}"
             repo.save_message(
                 trace_id=trace_id,
                 session_id=effective_session,
@@ -196,7 +255,7 @@ class AgentRouter:
             if escalated:
                 self.webhook.send_escalation_webhook(
                     trace_id=trace_id,
-                    reason=f"Route: {route_taken}, Confidence: {confidence}",
+                    reason=f"Route: {route_taken}, Confidence: {confidence:.2f}",
                     user_message=user_message,
                     session_id=effective_session,
                     route_taken=route_taken,

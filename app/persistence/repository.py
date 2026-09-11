@@ -117,5 +117,32 @@ class ConversationRepository:
                     (status, escalation_id)
                 )
 
+    def get_escalations_by_trace(self, trace_id: str) -> List[Dict[str, Any]]:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, trace_id, reason, payload, webhook_status, retry_count, created_at
+                FROM escalations
+                WHERE trace_id = ?
+                ORDER BY id ASC;
+                """,
+                (trace_id,)
+            )
+            rows = cursor.fetchall()
+            results = []
+            for row in rows:
+                item = dict(row)
+                if item.get("payload"):
+                    try:
+                        item["payload"] = json.loads(item["payload"])
+                    except Exception:
+                        pass
+                results.append(item)
+            return results
+
+    def get_session_history(self, session_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+        return self.get_history(session_id, limit)
+
 # Global repository singleton
 repo = ConversationRepository()
