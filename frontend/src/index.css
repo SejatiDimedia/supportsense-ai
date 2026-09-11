@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Custom High-Contrast Dark Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0B0F17;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1E293B;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+
+  /* Caret & Selection */
+  * {
+    caret-color: #34D399;
+  }
+  ::selection {
+    background: rgba(16, 185, 129, 0.25);
+    color: #F8FAFC;
+  }
+
+  /* Focus ring styling */
+  :focus-visible {
+    outline: 2px solid rgba(52, 211, 153, 0.6);
+    outline-offset: 1px;
+  }
+}
+
+/* Subtle Shimmer Animation for Reasoning State */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-shimmer {
+  animation: pulse-subtle 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

@@ -191,15 +191,21 @@ python3 -c "from app.rag.embedder import VectorStoreManager; VectorStoreManager(
 ```
 
 ### 5. Launch Application
-You can run the full system using two simple commands:
+You can run the full system using the following options:
 
-#### Option A: Run Streamlit UI (Standalone / Direct Fallback Mode)
+#### Option A: Interactive React Console (Recommended)
+```bash
+./run_react.sh
+```
+*Launches the FastAPI backend on `http://localhost:8000` and the interactive React Vite console at `http://localhost:5173`.*
+
+#### Option B: Run Streamlit UI (Alternative Dashboard)
 ```bash
 streamlit run ui/streamlit_app.py
 ```
-*Access the UI at `http://localhost:8501`.*
+*Access the Streamlit UI at `http://localhost:8501`.*
 
-#### Option B: Run FastAPI Backend
+#### Option C: Run FastAPI Backend Standalone
 ```bash
 python app/main.py
 ```

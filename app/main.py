@@ -4,6 +4,7 @@ from app.config import settings
 from app.api.routes_health import router as health_router
 from app.api.routes_metrics import router as metrics_router
 from app.api.routes_chat import router as chat_router
+from app.api.routes_telemetry import router as telemetry_router
 from app.observability.logger import setup_structured_logging
 from app.persistence.db import init_db
 
@@ -27,6 +28,7 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(metrics_router)
 app.include_router(chat_router)
+app.include_router(telemetry_router)
 
 @app.get("/")
 async def root():
