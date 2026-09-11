@@ -17,7 +17,7 @@ if lsof -Pi :8000 -sTCP:LISTEN -t >/dev/null ; then
     echo "[1/2] FastAPI backend is already running on http://localhost:8000"
 else
     echo "[1/2] Starting FastAPI backend on http://localhost:8000..."
-    python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+    python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload &
     BACKEND_PID=$!
     sleep 2
     echo "FastAPI backend started (PID: $BACKEND_PID)"

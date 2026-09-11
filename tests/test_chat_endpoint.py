@@ -32,6 +32,21 @@ async def test_chat_endpoint_indonesian_greeting():
     assert data["latency_ms"] < 100.0  # Instant response (< 100ms)
 
 @pytest.mark.asyncio
+async def test_chat_endpoint_out_of_domain_guardrail():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        response = await ac.post("/chat", json={"message": "Siapa presiden indonesia sekarang?", "session_id": "sess_test_ood"})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["route_taken"] == "direct"
+    assert data["confidence_score"] == 1.0
+    assert data["escalated"] is False
+    assert "customer support" in data["answer"].lower() or "pesanan" in data["answer"].lower()
+    assert "presiden" not in data["answer"].lower() or "tidak dapat" in data["answer"].lower() or "dibatasi" in data["answer"].lower()
+    assert data["latency_ms"] < 100.0
+
+@pytest.mark.asyncio
 async def test_chat_endpoint_security_escalation():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:

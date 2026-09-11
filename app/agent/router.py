@@ -1,6 +1,7 @@
 import time
 import uuid
 import logging
+import re
 from dataclasses import dataclass, asdict
 from typing import Dict, Any, Optional, List
 
@@ -87,10 +88,12 @@ class AgentRouter:
         )
         substantive_keywords = [
             "order", "refund", "warranty", "ship", "product", "policy", "damage",
-            "broken", "delay", "ticket", "#", "agen", "kurir", "resi", "barang",
+            "broken", "delay", "ticket", "agen", "kurir", "resi", "barang",
             "status", "pesanan", "retur", "garansi"
         ]
-        has_substantive_question = any(k in lower_msg for k in substantive_keywords)
+        has_substantive_question = ("#" in lower_msg) or any(
+            re.search(rf"\b{re.escape(k)}\b", lower_msg) for k in substantive_keywords
+        )
 
         if is_greeting and not has_substantive_question:
             latency_ms = round((time.time() - start_time) * 1000, 2)
@@ -175,7 +178,55 @@ class AgentRouter:
                 context_used="Security trigger: unauthorized action requested."
             )
 
-        # 3. Minta LLM merencanakan tools yang dibutuhkan (didukung chat_history)
+        # 3. Deteksi cepat out-of-domain (pertanyaan umum di luar lingkup customer support)
+        out_of_domain_topics = [
+            "presiden", "perdana menteri", "menteri", "gubernur", "pemilu", "pilpres", "partai", "dpr",
+            "ibukota", "sejarah", "perang dunia", "kemerdekaan", "lagu", "lirik", "chord",
+            "resep masakan", "cuaca hari ini", "prakiraan cuaca", "puisi", "pantun", "cerpen",
+            "film", "bioskop", "artis", "selebriti", "zodiak", "ramalan", "gempa", "tsunami"
+        ]
+        is_out_of_domain = any(topic in lower_msg for topic in out_of_domain_topics)
+        if is_out_of_domain and not has_substantive_question and not order_in_scope:
+            latency_ms = round((time.time() - start_time) * 1000, 2)
+            answer = (
+                "Maaf, saya adalah asisten AI khusus customer support SupportSense AI. "
+                "Layanan saya dibatasi untuk membantu informasi pesanan (#XXXX), produk, status pengiriman, "
+                "garansi, komplain paket, serta kebijakan retur dan pengembalian dana kami. "
+                "Pertanyaan di luar topik tersebut (seperti sejarah, politik, atau pengetahuan umum) tidak dapat saya jawab. "
+                "Apakah ada yang bisa saya bantu terkait pesanan atau layanan kami?"
+            )
+            metrics.record_request("direct", latency_ms)
+            try:
+                repo.save_message(
+                    trace_id=trace_id,
+                    session_id=effective_session,
+                    role="user",
+                    message=user_message,
+                    route_taken="direct",
+                    confidence_score=1.0
+                )
+                repo.save_message(
+                    trace_id=trace_id,
+                    session_id=effective_session,
+                    role="assistant",
+                    message=answer,
+                    route_taken="direct",
+                    confidence_score=1.0
+                )
+            except Exception as e:
+                logger.error(f"Error persisting out-of-domain refusal to SQLite: {e}", exc_info=True)
+
+            return ChatResult(
+                trace_id=trace_id,
+                answer=answer,
+                route_taken="direct",
+                confidence_score=1.0,
+                escalated=False,
+                latency_ms=latency_ms,
+                context_used="Deterministic out-of-domain guardrail."
+            )
+
+        # 4. Minta LLM merencanakan tools yang dibutuhkan (didukung chat_history)
         tool_calls = self.llm.plan_routing(user_message, chat_history=chat_history)
         tool_names = [call.get("function", {}).get("name") for call in tool_calls]
 
@@ -189,7 +240,11 @@ class AgentRouter:
             "barang", "product", "paket", "package", "kirim", "ship", "lost", "hilang",
             "rusak", "damage", "rma", "ganti", "pengganti", "dana", "money", "uang", "pic", "kapan", "estimasi"
         ]
-        is_order_followup = bool(active_session_order and any(k in lower_msg for k in order_related_keywords))
+        is_order_followup = bool(
+            active_session_order and any(
+                re.search(rf"\b{re.escape(k)}\b", lower_msg) for k in order_related_keywords
+            )
+        )
         if is_order_followup and "lookup_relational_data" not in tool_names:
             tool_names.append("lookup_relational_data")
 
