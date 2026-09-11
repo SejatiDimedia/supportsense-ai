@@ -22,16 +22,15 @@ logger = logging.getLogger(__name__)
 # --- Page Configuration ---
 st.set_page_config(
     page_title="SupportSense AI — Hybrid RAG + KAG Assistant",
-    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# --- Impeccable Dark Theme Styling (WCAG AA Compliant, High Contrast, Sleek Enterprise) ---
+# --- Impeccable Dark Theme Styling (Zero Emoji, Clean Typography, WCAG AA Compliant) ---
 st.markdown(
     """
     <style>
-    /* Font Stack & Base Typography */
+    /* Base Typography & Font Stack */
     html, body, [class*="css"] {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
@@ -42,16 +41,16 @@ st.markdown(
         align-items: center;
         justify-content: space-between;
         margin-bottom: 0.25rem;
-        padding-bottom: 0.5rem;
+        padding-bottom: 0.6rem;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
     .brand-title-wrap {
         display: flex;
         align-items: center;
-        gap: 0.6rem;
+        gap: 0.75rem;
     }
     .brand-title {
-        font-size: 1.6rem;
+        font-size: 1.55rem;
         font-weight: 700;
         letter-spacing: -0.02em;
         color: #F8FAFC;
@@ -60,7 +59,7 @@ st.markdown(
     .brand-pill {
         display: inline-flex;
         align-items: center;
-        gap: 0.35rem;
+        gap: 0.4rem;
         background: rgba(16, 185, 129, 0.12);
         color: #34D399;
         border: 1px solid rgba(16, 185, 129, 0.25);
@@ -166,32 +165,12 @@ st.markdown(
     
     /* Quick Action Prompt Chips */
     .scenario-title {
-        font-size: 0.82rem;
+        font-size: 0.8rem;
         font-weight: 600;
         color: #94A3B8;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
-        margin-bottom: 0.4rem;
-    }
-    
-    /* Inspection Section styling */
-    .context-card {
-        background: #111827;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 6px;
-        padding: 0.85rem;
-        color: #E2E8F0;
-        font-size: 0.83rem;
-        line-height: 1.5;
-        margin-top: 0.4rem;
-    }
-    .context-header {
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: #60A5FA;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        margin-bottom: 0.4rem;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.45rem;
     }
     </style>
     """,
@@ -277,7 +256,7 @@ def submit_query(prompt_text: str):
 
 # --- Sidebar: System Control & Observability Cockpit ---
 with st.sidebar:
-    st.markdown("### ⚡ SupportSense Cockpit")
+    st.markdown("### SupportSense Cockpit")
     st.caption("AI Customer Support Assistant | Modular Monolith")
 
     # Session Manager Card
@@ -293,17 +272,17 @@ with st.sidebar:
 
     col_btn1, col_btn2 = st.columns(2)
     with col_btn1:
-        if st.button("🔄 Clear Chat", use_container_width=True):
+        if st.button("Clear Chat", use_container_width=True):
             st.session_state.messages = []
             st.rerun()
     with col_btn2:
-        if st.button("➕ New Session", use_container_width=True):
+        if st.button("New Session", use_container_width=True):
             st.session_state.session_id = f"sess_{str(uuid.uuid4())[:8]}"
             st.session_state.messages = []
             st.rerun()
 
     st.markdown("---")
-    st.markdown("#### 🛠️ System Components")
+    st.markdown("#### System Components")
 
     # 1. LLM Model Card
     st.markdown(
@@ -357,14 +336,14 @@ with st.sidebar:
     )
 
     if pending_count > 0:
-        if st.button("🚀 Flush Pending Retries", use_container_width=True):
+        if st.button("Flush Pending Retries", use_container_width=True):
             recovered = webhook_client.process_pending_retries()
             st.success(f"Dispatched {recovered} items.")
             time.sleep(1)
             st.rerun()
 
     st.markdown("---")
-    st.markdown("#### 📊 Session Telemetry")
+    st.markdown("#### Session Telemetry")
     assistant_msgs = [m for m in st.session_state.messages if m.get("role") == "assistant"]
     total_queries = len(assistant_msgs)
 
@@ -402,15 +381,15 @@ st.markdown(
 )
 
 # --- PRD Acceptance Benchmark Scenarios ---
-st.markdown('<div class="scenario-title">⚡ Quick Test Scenarios (PRD Section 17):</div>', unsafe_allow_html=True)
+st.markdown('<div class="scenario-title">Quick Test Scenarios (PRD Section 17):</div>', unsafe_allow_html=True)
 cols = st.columns(5)
 
 scenarios = [
-    ("📄 Refund Policy", "What is your refund policy?", "RAG: Document search & cross-encoder rerank"),
-    ("📦 Order #4521", "Where is my order #4521?", "KAG: Relational graph traversal"),
-    ("⚡ Damaged + #4521", "My order #4521 arrived damaged, what is your policy and who can help me?", "Hybrid: RAG policy + KAG agent traversal"),
-    ("🔒 Security Check", "Can you hack into my account to reset my password manually?", "Escalation: Guardrail bypass detection"),
-    ("❓ Order #9999999", "Where is my order #9999999?", "Escalation: Unknown entity fallback"),
+    ("Refund Policy", "What is your refund policy?", "RAG: Document search & cross-encoder rerank"),
+    ("Order #4521", "Where is my order #4521?", "KAG: Relational graph traversal"),
+    ("Damaged + #4521", "My order #4521 arrived damaged, what is your policy and who can help me?", "Hybrid: RAG policy + KAG agent traversal"),
+    ("Security Check", "Can you hack into my account to reset my password manually?", "Escalation: Guardrail bypass detection"),
+    ("Order #9999999", "Where is my order #9999999?", "Escalation: Unknown entity fallback"),
 ]
 
 for i, (label, prompt_val, help_text) in enumerate(scenarios):
@@ -423,10 +402,7 @@ st.markdown("---")
 
 # --- Chat Messages Stream ---
 if not st.session_state.messages:
-    st.info(
-        "👋 Welcome! Click any quick test scenario above or enter a question below to test the agent router.",
-        icon="ℹ️",
-    )
+    st.info("Welcome to SupportSense AI. Select any quick test scenario above or enter an inquiry below to evaluate the agent router.")
 
 for msg in st.session_state.messages:
     role = msg["role"]
@@ -461,13 +437,13 @@ for msg in st.session_state.messages:
 
             # Grounding & Context Inspector (Clean Dark-Theme Rendering with Syntax Highlighting)
             if context and context.strip() and context != "Direct greeting handler.":
-                with st.expander(f"🔍 Grounding & Context Inspector (Trace: {trace_id})", expanded=False):
+                with st.expander(f"Grounding & Context Inspector (Trace: {trace_id})", expanded=False):
                     # Check if hybrid or combined
                     has_kag = "=== RELATIONAL DATA (KAG) ===" in context
                     has_rag = "=== POLICY & DOCUMENTATION (RAG) ===" in context
 
                     if has_kag and has_rag:
-                        tab1, tab2 = st.tabs(["🕸️ Relational Graph (KAG)", "📄 Retrieved Documentation (RAG)"])
+                        tab1, tab2 = st.tabs(["Relational Graph (KAG)", "Retrieved Documentation (RAG)"])
                         with tab1:
                             kag_content = context.split("=== POLICY & DOCUMENTATION (RAG) ===")[0].replace("=== RELATIONAL DATA (KAG) ===", "").strip()
                             st.code(kag_content, language="markdown")
