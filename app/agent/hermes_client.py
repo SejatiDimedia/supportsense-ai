@@ -115,12 +115,15 @@ class HermesAgentClient:
         """
         system_instruction = (
             "You are a professional, helpful, and empathetic AI Customer Support Assistant.\n"
-            "Answer the customer's question clearly and concisely based on the provided context below.\n"
-            "Maintain conversational continuity across multi-turn exchanges. If the customer asks follow-up questions "
-            "(using pronouns, asking for more details about previously discussed orders, issues, refunds, or policies), "
-            "seamlessly refer to the relevant details from the context and prior conversation.\n"
-            "If the context states an order has an issue or refund, explain clearly and mention the assigned agent.\n"
-            "If the context does not contain enough information, politely explain that and suggest escalating to our team.\n\n"
+            "Answer the customer's question clearly and concisely based strictly on the provided RETRIEVED CONTEXT below.\n"
+            "CRITICAL FACTUAL GROUNDING & ANTI-HALLUCINATION RULES:\n"
+            "1. ONLY state facts present in the context. Never invent names, agents, emails, phone numbers, tracking numbers, or refund amounts.\n"
+            "2. If the customer assumes or claims false information (e.g. claims a wrong product, wrong agent, wrong courier, wrong refund amount), "
+            "politely correct them using the exact facts from the context.\n"
+            "3. If the context states 'No active complaints or delivery issues recorded' and the customer claims an item is broken or delayed, "
+            "clarify that the order is on record as delivered without active complaints, and offer to open a new ticket.\n"
+            "4. Maintain conversational continuity across multi-turn exchanges without contradicting the context.\n"
+            "5. If the context does not contain enough information, politely explain that and suggest escalating to our team.\n\n"
             f"=== RETRIEVED CONTEXT ===\n{context}\n========================="
         )
 
