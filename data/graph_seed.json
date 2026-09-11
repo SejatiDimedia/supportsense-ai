@@ -1,0 +1,154 @@
+{
+  "nodes": [
+    {
+      "id": "cust_101",
+      "label": "Customer",
+      "properties": {
+        "name": "John Doe",
+        "email": "john.doe@example.com",
+        "phone": "+1-555-0199",
+        "tier": "Gold"
+      }
+    },
+    {
+      "id": "cust_102",
+      "label": "Customer",
+      "properties": {
+        "name": "Sarah Connor",
+        "email": "sarah.c@example.com",
+        "phone": "+1-555-0234",
+        "tier": "Standard"
+      }
+    },
+    {
+      "id": "ord_4521",
+      "label": "Order",
+      "properties": {
+        "order_number": "#4521",
+        "order_date": "2026-09-02",
+        "status": "shipping_delayed",
+        "shipping_carrier": "FedEx",
+        "tracking_number": "FDX-8829104",
+        "estimated_delivery": "2026-09-15",
+        "total_amount": 199.99
+      }
+    },
+    {
+      "id": "ord_4522",
+      "label": "Order",
+      "properties": {
+        "order_number": "#4522",
+        "order_date": "2026-09-05",
+        "status": "delivered",
+        "shipping_carrier": "DHL",
+        "tracking_number": "DHL-4401928",
+        "delivered_date": "2026-09-08",
+        "total_amount": 79.50
+      }
+    },
+    {
+      "id": "prod_01",
+      "label": "Product",
+      "properties": {
+        "name": "Apex Smartwatch Pro",
+        "sku": "APX-SW-01",
+        "category": "Smart Wearables",
+        "warranty_months": 24,
+        "price": 199.99
+      }
+    },
+    {
+      "id": "prod_02",
+      "label": "Product",
+      "properties": {
+        "name": "SonicAir Wireless Earbuds",
+        "sku": "SNK-EB-02",
+        "category": "Audio Accessories",
+        "warranty_months": 12,
+        "price": 79.50
+      }
+    },
+    {
+      "id": "iss_701",
+      "label": "Issue",
+      "properties": {
+        "ticket_id": "TICK-701",
+        "title": "Severe Shipping Delay & Suspected Box Damage",
+        "priority": "High",
+        "status": "Under Investigation",
+        "opened_at": "2026-09-07T10:15:00Z",
+        "notes": "Package held at regional transit hub due to sorting error. Expedited courier follow-up initiated."
+      }
+    },
+    {
+      "id": "agt_budi",
+      "label": "Agent",
+      "properties": {
+        "name": "Budi Santoso",
+        "role": "Senior Logistics Support Specialist",
+        "department": "Fulfillment & Courier Escalations",
+        "email": "budi.santoso@supportsense.io"
+      }
+    },
+    {
+      "id": "agt_siti",
+      "label": "Agent",
+      "properties": {
+        "name": "Siti Rahma",
+        "role": "Customer Experience Lead",
+        "department": "Returns & Warranty Claims",
+        "email": "siti.rahma@supportsense.io"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "cust_101",
+      "target": "ord_4521",
+      "relation": "PLACED",
+      "properties": {
+        "payment_method": "Credit Card"
+      }
+    },
+    {
+      "source": "ord_4521",
+      "target": "prod_01",
+      "relation": "CONTAINS",
+      "properties": {
+        "quantity": 1
+      }
+    },
+    {
+      "source": "ord_4521",
+      "target": "iss_701",
+      "relation": "HAS_ISSUE",
+      "properties": {
+        "reported_via": "Live Chat"
+      }
+    },
+    {
+      "source": "iss_701",
+      "target": "agt_budi",
+      "relation": "ASSIGNED_TO",
+      "properties": {
+        "assigned_at": "2026-09-07T11:00:00Z"
+      }
+    },
+    {
+      "source": "cust_102",
+      "target": "ord_4522",
+      "relation": "PLACED",
+      "properties": {
+        "payment_method": "PayPal"
+      }
+    },
+    {
+      "source": "ord_4522",
+      "target": "prod_02",
+      "relation": "CONTAINS",
+      "properties": {
+        "quantity": 1
+      }
+    }
+  ]
+}
