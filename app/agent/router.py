@@ -12,6 +12,7 @@ from app.kag.graph_query import GraphQueryEngine, extract_order_number
 from app.observability.logger import set_trace_id, log_event
 from app.observability.metrics import metrics
 from app.persistence.repository import repo
+from app.escalation.webhook_client import N8nWebhookClient
 
 logger = logging.getLogger(__name__)
 
@@ -40,11 +41,13 @@ class AgentRouter:
         rag_retriever: Optional[RAGRetriever] = None,
         rag_reranker: Optional[CrossEncoderReranker] = None,
         kag_engine: Optional[GraphQueryEngine] = None,
+        webhook_client: Optional[N8nWebhookClient] = None,
     ):
         self.llm = llm_client or HermesAgentClient()
         self.retriever = rag_retriever or RAGRetriever()
         self.reranker = rag_reranker or CrossEncoderReranker()
         self.kag = kag_engine or GraphQueryEngine()
+        self.webhook = webhook_client or N8nWebhookClient()
 
     def process_message(self, user_message: str, session_id: Optional[str] = None) -> ChatResult:
         start_time = time.time()
@@ -191,10 +194,13 @@ class AgentRouter:
                 confidence_score=confidence
             )
             if escalated:
-                repo.save_escalation(
+                self.webhook.send_escalation_webhook(
                     trace_id=trace_id,
                     reason=f"Route: {route_taken}, Confidence: {confidence}",
-                    payload={"user_message": user_message, "answer": answer, "session_id": effective_session}
+                    user_message=user_message,
+                    session_id=effective_session,
+                    route_taken=route_taken,
+                    confidence_score=confidence
                 )
         except Exception as e:
             logger.error(f"Error persisting to SQLite: {e}", exc_info=True)
