@@ -7,6 +7,25 @@ export default {
   theme: {
     extend: {
       colors: {
+        sidebar: {
+          bg: '#0E1116',
+          hover: '#181C23',
+          card: '#181C23',
+          border: 'rgba(255, 255, 255, 0.08)',
+          text: '#9CA3AF',
+        },
+        canvas: {
+          bg: '#FFFFFF',
+          surface: '#F8F9FA',
+          border: '#E5E7EB',
+          muted: '#6B7280',
+        },
+        lime: {
+          300: '#E4FA66',
+          400: '#D4F638',
+          500: '#C6F432',
+          hover: '#B5E424',
+        },
         graphite: {
           950: '#070A0F',
           900: '#0B0F17',
@@ -18,28 +37,28 @@ export default {
         route: {
           rag: {
             bg: 'rgba(16, 185, 129, 0.12)',
-            text: '#34D399',
-            border: 'rgba(52, 211, 153, 0.3)',
+            text: '#10B981',
+            border: 'rgba(16, 185, 129, 0.25)',
           },
           kag: {
             bg: 'rgba(139, 92, 246, 0.12)',
-            text: '#A78BFA',
-            border: 'rgba(167, 139, 250, 0.3)',
+            text: '#8B5CF6',
+            border: 'rgba(139, 92, 246, 0.25)',
           },
           hybrid: {
             bg: 'rgba(245, 158, 11, 0.12)',
-            text: '#FBBF24',
-            border: 'rgba(251, 191, 36, 0.3)',
+            text: '#F59E0B',
+            border: 'rgba(245, 158, 11, 0.25)',
           },
           direct: {
             bg: 'rgba(59, 130, 246, 0.12)',
-            text: '#60A5FA',
-            border: 'rgba(96, 165, 250, 0.3)',
+            text: '#3B82F6',
+            border: 'rgba(59, 130, 246, 0.25)',
           },
           escalated: {
-            bg: 'rgba(239, 68, 68, 0.14)',
-            text: '#F87171',
-            border: 'rgba(248, 113, 113, 0.35)',
+            bg: 'rgba(239, 68, 68, 0.12)',
+            text: '#EF4444',
+            border: 'rgba(239, 68, 68, 0.25)',
           }
         }
       },

@@ -1,77 +1,68 @@
 import React, { useState } from 'react';
-import { Cpu, RotateCcw, Copy, Check, Activity } from 'lucide-react';
+import { ChevronDown, Share2, MoreVertical, Check } from 'lucide-react';
 
 interface HeaderProps {
   sessionId: string;
-  isBackendHealthy: boolean;
   onResetSession: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({
-  sessionId,
-  isBackendHealthy,
-  onResetSession,
-}) => {
+export const Header: React.FC<HeaderProps> = ({ sessionId, onResetSession }) => {
   const [copied, setCopied] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const handleCopySession = () => {
-    navigator.clipboard.writeText(sessionId);
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <header className="border-b border-white/[0.08] bg-[#0A0E17]/95 px-6 py-3.5 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
-            <Cpu className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold tracking-tight text-white">
-                SupportSense AI
-              </h1>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10B981]" />
-                Operate Console
-              </span>
+    <header className="flex items-center justify-between border-b border-slate-100 bg-white px-8 py-3.5">
+      {/* Model Selector Dropdown */}
+      <div className="relative">
+        <button
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
+        >
+          <span>SupportSense 1.0</span>
+          <ChevronDown className="h-4 w-4 text-slate-500 transition-transform" />
+        </button>
+
+        {isDropdownOpen && (
+          <div className="absolute left-0 mt-1 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-200/50 z-50 text-xs">
+            <div className="rounded-lg bg-slate-50 p-2 border border-slate-100 mb-1">
+              <div className="font-semibold text-slate-900">SupportSense 1.0</div>
+              <div className="text-slate-500 mt-0.5">Hybrid RAG + KAG with PostgreSQL Parity</div>
             </div>
-            <p className="text-xs text-slate-400">
-              Hybrid RAG + KAG Multi-Path Assistant with Relational Parity
-            </p>
+            <div className="p-2 text-slate-500 font-mono text-[11px] border-t border-slate-100">
+              <span className="text-slate-400 block text-[10px] uppercase">Session ID</span>
+              <span className="truncate block text-slate-700">{sessionId}</span>
+            </div>
           </div>
-        </div>
+        )}
+      </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-md border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-slate-300">
-            <Activity className="h-3.5 w-3.5 text-slate-400" />
-            <span className="text-slate-400">Backend:</span>
-            <span className={isBackendHealthy ? 'font-medium text-emerald-400' : 'font-medium text-amber-400'}>
-              {isBackendHealthy ? 'Online (Port 8000)' : 'Connecting...'}
-            </span>
-          </div>
+      {/* Right Actions: Share, Options, Profile */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleShare}
+          title="Share conversation"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200/80 bg-slate-50/50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+        >
+          {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Share2 className="h-4 w-4" />}
+        </button>
 
-          <div className="flex items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-xs text-slate-300 font-mono">
-            <span className="text-slate-500">Session:</span>
-            <span className="text-slate-200">{sessionId.slice(0, 12)}...</span>
-            <button
-              onClick={handleCopySession}
-              title="Copy session ID"
-              className="ml-1 text-slate-400 hover:text-white transition-colors"
-            >
-              {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-            </button>
-          </div>
+        <button
+          onClick={onResetSession}
+          title="Session settings & reset"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200/80 bg-slate-50/50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+        >
+          <MoreVertical className="h-4 w-4" />
+        </button>
 
-          <button
-            onClick={onResetSession}
-            title="Reset conversation session"
-            className="flex items-center gap-1.5 rounded-md border border-white/[0.1] bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-white/[0.1] hover:text-white transition-colors"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Reset
-          </button>
+        {/* Operator Profile Avatar Badge */}
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold text-white shadow-sm border border-slate-800">
+          OP
         </div>
       </div>
     </header>

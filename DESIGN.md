@@ -1,29 +1,34 @@
 ---
 name: SupportSense AI Console
-description: High-density graphite developer and operator console for AI customer support
+description: Dual-tone enterprise console with dark navigation sidebar, floating white workspace canvas, and chartreuse accents
 colors:
-  primary: "#10B981"
-  primary-hover: "#34D399"
-  primary-tint: "rgba(16, 185, 129, 0.12)"
-  surface-ground: "#070A0F"
-  surface-card: "#0B0F17"
-  surface-panel: "#111722"
-  border-subtle: "rgba(255, 255, 255, 0.08)"
-  border-active: "rgba(52, 211, 153, 0.4)"
-  text-primary: "#F8FAFC"
-  text-secondary: "#94A3B8"
-  text-muted: "#64748B"
-  route-rag: "#34D399"
-  route-kag: "#A78BFA"
-  route-hybrid: "#FBBF24"
-  route-direct: "#60A5FA"
-  route-escalated: "#F87171"
+  primary-lime: "#D4F638"
+  primary-lime-hover: "#B5E424"
+  sidebar-bg: "#0E1116"
+  sidebar-card: "#181C23"
+  sidebar-border: "rgba(255, 255, 255, 0.08)"
+  sidebar-text: "#9CA3AF"
+  canvas-bg: "#FFFFFF"
+  canvas-surface: "#F8F9FA"
+  canvas-border: "#E5E7EB"
+  canvas-text: "#111827"
+  canvas-muted: "#6B7280"
+  route-rag: "#10B981"
+  route-kag: "#8B5CF6"
+  route-hybrid: "#F59E0B"
+  route-direct: "#3B82F6"
+  route-escalated: "#EF4444"
 typography:
+  display:
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+    fontSize: "2.25rem"
+    fontWeight: 700
+    letterSpacing: "-0.025em"
   headline:
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
     fontSize: "1rem"
-    fontWeight: 700
-    letterSpacing: "-0.02em"
+    fontWeight: 600
+    letterSpacing: "-0.01em"
   body:
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
     fontSize: "0.875rem"
@@ -34,9 +39,11 @@ typography:
     fontSize: "0.75rem"
     fontWeight: 500
 rounded:
-  sm: "4px"
+  sm: "6px"
   md: "8px"
   lg: "12px"
+  xl: "16px"
+  2xl: "24px"
   full: "9999px"
 spacing:
   xs: "4px"
@@ -44,62 +51,68 @@ spacing:
   md: "12px"
   lg: "16px"
   xl: "24px"
+  2xl: "32px"
 ---
 
 ## Overview
 
-SupportSense AI Console is an operational, high-density interface built for customer support specialists and technical evaluators. It prioritizes scanability, sub-millisecond route attribution, transparent grounding inspection, and resilient human escalation.
+SupportSense AI Console is an operational, dual-tone AI assistant interface inspired by high-craft modern design. It pairs a dark charcoal navigation sidebar with a high-radius white canvas workspace, anchored by vibrant chartreuse/lime accents.
 
 ## Colors
 
-The interface employs a dark-first graphite palette anchored on `#070A0F` and `#0B0F17` with hairline seams (`rgba(255, 255, 255, 0.08)`):
-
-- **Primary Accent**: Emerald (`#10B981`, `#34D399`) for primary actions, connection health, and verified document grounding.
-- **Route Tints**:
-  - `RAG`: Emerald (`#34D399`, bg `rgba(16, 185, 129, 0.12)`)
-  - `KAG`: Violet (`#A78BFA`, bg `rgba(139, 92, 246, 0.12)`)
-  - `Hybrid`: Amber (`#FBBF24`, bg `rgba(245, 158, 11, 0.12)`)
-  - `Direct`: Sky Blue (`#60A5FA`, bg `rgba(59, 130, 246, 0.12)`)
-  - `Escalated`: Coral Red (`#F87171`, bg `rgba(239, 68, 68, 0.14)`)
+- **Left Sidebar**: Deep charcoal (`#0E1116`) with hairline borders (`rgba(255, 255, 255, 0.08)`), dark telemetry card (`#181C23`), and muted text (`#9CA3AF`).
+- **Accent Highlight**: Electric Lime / Chartreuse (`#D4F638` / `#C6F432`) for active icon badge squares and primary audit CTA buttons.
+- **Main Canvas**: Crisp white card (`#FFFFFF`) with subtle border (`#E5E7EB`), soft off-white secondary surfaces (`#F8F9FA`), and high-contrast dark text (`#111827`, `#374151`).
+- **Semantic Route Tokens**:
+  - `RAG`: Emerald (`#10B981`, bg `rgba(16, 185, 129, 0.12)`)
+  - `KAG`: Violet (`#8B5CF6`, bg `rgba(139, 92, 246, 0.12)`)
+  - `Hybrid`: Amber (`#F59E0B`, bg `rgba(245, 158, 11, 0.12)`)
+  - `Direct`: Sky Blue (`#3B82F6`, bg `rgba(59, 130, 246, 0.12)`)
+  - `Escalated`: Coral Red (`#EF4444`, bg `rgba(239, 68, 68, 0.12)`)
 
 ## Typography
 
-- **Interface Sans**: Apple system stack / Segoe UI / Roboto for natural reading ergonomics.
-- **Monospaced Numerals**: `ui-monospace` for tabular data, timestamps, session IDs, latencies, and trace IDs.
+- **Interface Sans**: Apple system stack / Segoe UI / Roboto for high readability.
+- **Monospaced Figures**: `ui-monospace` for tabular data, latency metrics, session IDs, and trace IDs.
 
 ## Layout
 
-A three-tier operational shell:
-1. **Header & Cockpit Bar**: Compact fixed status header with live ChromaDB, PostgreSQL, and escalation queue counters.
-2. **Interactive Workspace**: Split view accommodating the central conversational stream (2/3 width) and the collapsible Grounding Audit Drawer (1/3 width).
-3. **Ergonomic Input Console**: Bottom-docked keyboard console supporting Enter to send and Shift+Enter for multiline input.
+1. **Outer Shell**: Deep dark frame (`#070A0F`).
+2. **Left Navigation Sidebar**: Fixed 64-width sidebar containing the brand mark, "New chat" button with `⌘ N`, search, recent session list, telemetry status card, and documentation links.
+3. **Floating Canvas**: Large rounded white card (`rounded-[24px]`) inside the outer frame containing the model selector header, centered welcome hero, prominent floating input container, and 3 scenario cards with lime icon boxes.
+4. **Conversational Stream**: Switches to a clean chat stream when active, with dark user bubbles and light assistant cards.
+5. **Grounding Drawer**: Collapsible side audit inspector revealing raw database records and ChromaDB excerpts.
 
 ## Elevation & Depth
 
-Tonal elevation with 1px hairline seams rather than heavy drop shadows. Focus states utilize a 2px emerald outline with 1px offset.
+- The canvas floats on the dark background with `rounded-[24px]` and soft depth (`shadow-2xl`).
+- Cards inside the canvas use subtle borders (`border-slate-200/90`) and gentle hover elevations.
 
 ## Shapes
 
-- Containers and panels: Rounded 8px (`rounded-lg`) or 12px (`rounded-xl`).
-- Chips and badges: Fully rounded pills (`rounded-full`) or 4px (`rounded`).
+- Canvas container: `rounded-[24px]` (`24px`).
+- Feature cards & Input container: `rounded-2xl` (`16px`).
+- Buttons & icon boxes: `rounded-lg` (`8px`) or `rounded-xl` (`12px`).
 
 ## Components
 
-- **Header**: Top navigation, session ID display with copy confirmation, and backend status indicator.
-- **TelemetryBar**: Live cluster metrics bar tracking vector store and relational graph counts.
-- **ScenarioChips**: Horizontal prompt launcher chips with category badges.
-- **ChatStream**: Multi-turn message list with route tags, confidence scores, latency badges, and inline grounding inspector toggles.
-- **GroundingDrawer**: Collapsible side inspection drawer displaying verified document excerpts and relational graph records.
-- **InputConsole**: Text input with send trigger and keyboard shortcut hints.
+- **Sidebar**: Dark navigation, New Chat button, cluster status card with lime action button.
+- **Header**: Top canvas bar with model selector dropdown and operator avatar.
+- **WelcomeHero**: Centered greeting and subtitle.
+- **InputConsole**: Floating input bar with `+` action, audio indicator, and black circular upward arrow.
+- **ScenarioCards**: 3 white cards with vibrant lime square icon boxes.
+- **ChatStream**: Conversation history with semantic route badges, confidence scores, and latency.
+- **GroundingDrawer**: Side inspector displaying raw grounding context.
+- **TelemetryModal**: Detailed modal presenting cluster metrics.
 
 ## Do's and Don'ts
 
 ### Do
 - Use Lucide React SVG icons with uniform 1.5px stroke.
-- Format all latency and score numbers using monospaced font.
-- Preserve zero-emoji compliance in all visual text, labels, and error states.
+- Ensure text on lime backgrounds is strictly `#000000` (pure black) for maximum contrast.
+- Preserve zero-emoji compliance across all visual text, labels, and error states.
 
 ### Don't
-- Do not use generic gradient text or colorful outer glows.
-- Do not use emojis, emoticons, or Unicode symbols as iconography.
+- Do not use generic gradient text or neon glows.
+- Do not use emojis or emoticons as iconography.
 - Do not hide grounding or context details when an operator requests inspection.

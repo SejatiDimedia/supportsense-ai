@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
-import { TelemetryBar } from './components/TelemetryBar';
-import { ScenarioChips } from './components/ScenarioChips';
+import { WelcomeHero } from './components/WelcomeHero';
+import { ScenarioCards } from './components/ScenarioCards';
+import { InputConsole } from './components/InputConsole';
 import { ChatStream } from './components/ChatStream';
 import { GroundingDrawer } from './components/GroundingDrawer';
-import { InputConsole } from './components/InputConsole';
+import { TelemetryModal } from './components/TelemetryModal';
 import { sendChatMessage, getTelemetryData, getHealthStatus } from './services/api';
 import { ChatMessage, TelemetryData } from './types';
 
@@ -23,12 +25,11 @@ export function App() {
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isBackendHealthy, setIsBackendHealthy] = useState<boolean>(false);
+  const [_isBackendHealthy, setIsBackendHealthy] = useState<boolean>(false);
   const [telemetry, setTelemetry] = useState<TelemetryData | null>(null);
-  const [isTelemetryLoading, setIsTelemetryLoading] = useState<boolean>(true);
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
+  const [isTelemetryModalOpen, setIsTelemetryModalOpen] = useState<boolean>(false);
 
-  // Poll health & telemetry
   const refreshTelemetry = useCallback(async () => {
     try {
       const [healthRes, telemetryRes] = await Promise.all([
@@ -40,8 +41,8 @@ export function App() {
       if (telemetryRes) {
         setTelemetry(telemetryRes);
       }
-    } finally {
-      setIsTelemetryLoading(false);
+    } catch {
+      // Graceful fallback
     }
   }, []);
 
@@ -66,7 +67,7 @@ export function App() {
       id: `msg_user_${Date.now()}`,
       sender: 'user',
       text: userText,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -84,7 +85,7 @@ export function App() {
         id: `msg_ast_${Date.now()}`,
         sender: 'assistant',
         text: res.answer,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         route_taken: res.route_taken,
         confidence_score: res.confidence_score,
         escalated: res.escalated,
@@ -95,19 +96,17 @@ export function App() {
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // If this message has context, automatically open or update drawer for inspection
       if (assistantMessage.context_used) {
         setSelectedMessage(assistantMessage);
       }
 
-      // Refresh telemetry after interaction
       refreshTelemetry();
     } catch (err: any) {
       const errorMessage: ChatMessage = {
         id: `msg_err_${Date.now()}`,
         sender: 'assistant',
-        text: `Error contacting assistant engine: ${err.message || 'Unknown network error'}. Please ensure FastAPI backend is running on port 8000.`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        text: `Error connecting to assistant engine: ${err.message || 'Unknown network error'}. Please verify FastAPI backend on port 8000.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         route_taken: 'direct',
         confidence_score: 0,
         escalated: false,
@@ -119,47 +118,70 @@ export function App() {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-[#070A0F] text-slate-100 antialiased select-none">
-      {/* 1. Brand Header */}
-      <Header
-        sessionId={sessionId}
-        isBackendHealthy={isBackendHealthy}
-        onResetSession={handleResetSession}
-      />
-
-      {/* 2. Telemetry Cockpit */}
-      <TelemetryBar
+    <div className="flex h-screen w-screen bg-[#070A0F] text-slate-900 overflow-hidden font-sans">
+      {/* 1. Left Dark Sidebar (Matching Reference Screenshot) */}
+      <Sidebar
+        onNewChat={handleResetSession}
         telemetry={telemetry}
-        isLoading={isTelemetryLoading}
+        onOpenTelemetryModal={() => setIsTelemetryModalOpen(true)}
       />
 
-      {/* 3. Pre-Canned PRD Scenario Chips */}
-      <ScenarioChips
-        onSelectScenario={handleSendMessage}
-        disabled={isLoading}
-      />
-
-      {/* 4. Main Body: Split View (Chat Stream + Grounding Drawer) */}
-      <div className="flex flex-1 overflow-hidden select-text">
-        <ChatStream
-          messages={messages}
-          isLoading={isLoading}
-          onInspectContext={(msg) => setSelectedMessage(msg)}
-          selectedMessageId={selectedMessage?.id}
+      {/* 2. Floating High-Radius White Canvas */}
+      <main className="my-2.5 mr-2.5 flex flex-1 flex-col overflow-hidden rounded-[24px] bg-white shadow-2xl border border-white/[0.05]">
+        {/* Canvas Top Bar with Model Dropdown & Profile */}
+        <Header
+          sessionId={sessionId}
+          onResetSession={handleResetSession}
         />
 
-        {selectedMessage && (
-          <GroundingDrawer
-            message={selectedMessage}
-            onClose={() => setSelectedMessage(null)}
-          />
-        )}
-      </div>
+        {/* Canvas Body: Welcome Hero (if empty) vs Chat Stream (if active) */}
+        <div className="flex flex-1 overflow-hidden">
+          <div className="flex flex-1 flex-col overflow-y-auto">
+            {messages.length === 0 ? (
+              <div className="flex flex-1 flex-col justify-center pb-12">
+                <WelcomeHero />
+                <InputConsole
+                  onSendMessage={handleSendMessage}
+                  isLoading={isLoading}
+                />
+                <ScenarioCards
+                  onSelectScenario={handleSendMessage}
+                  disabled={isLoading}
+                />
+              </div>
+            ) : (
+              <div className="flex flex-1 flex-col justify-between overflow-hidden">
+                <ChatStream
+                  messages={messages}
+                  isLoading={isLoading}
+                  onInspectContext={(msg) => setSelectedMessage(msg)}
+                  selectedMessageId={selectedMessage?.id}
+                />
+                <div className="pb-4 bg-white/80 backdrop-blur-sm">
+                  <InputConsole
+                    onSendMessage={handleSendMessage}
+                    isLoading={isLoading}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
-      {/* 5. Input Console */}
-      <InputConsole
-        onSendMessage={handleSendMessage}
-        isLoading={isLoading}
+          {/* Collapsible Grounding Audit Inspector */}
+          {selectedMessage && (
+            <GroundingDrawer
+              message={selectedMessage}
+              onClose={() => setSelectedMessage(null)}
+            />
+          )}
+        </div>
+      </main>
+
+      {/* Telemetry & Cluster Architecture Modal */}
+      <TelemetryModal
+        isOpen={isTelemetryModalOpen}
+        onClose={() => setIsTelemetryModalOpen(false)}
+        telemetry={telemetry}
       />
     </div>
   );
