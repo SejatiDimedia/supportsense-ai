@@ -11,6 +11,7 @@ from app.kag.graph_query import GraphQueryEngine, extract_order_number
 
 from app.observability.logger import set_trace_id, log_event
 from app.observability.metrics import metrics
+from app.persistence.repository import repo
 
 logger = logging.getLogger(__name__)
 
@@ -169,6 +170,34 @@ class AgentRouter:
 
         # Record observability metrics
         metrics.record_request(route_taken, latency_ms)
+
+        # Auto-persist conversation & escalation to SQLite database
+        try:
+            effective_session = session_id or f"sess_{trace_id}"
+            repo.save_message(
+                trace_id=trace_id,
+                session_id=effective_session,
+                role="user",
+                message=user_message,
+                route_taken=route_taken,
+                confidence_score=confidence
+            )
+            repo.save_message(
+                trace_id=trace_id,
+                session_id=effective_session,
+                role="assistant",
+                message=answer,
+                route_taken=route_taken,
+                confidence_score=confidence
+            )
+            if escalated:
+                repo.save_escalation(
+                    trace_id=trace_id,
+                    reason=f"Route: {route_taken}, Confidence: {confidence}",
+                    payload={"user_message": user_message, "answer": answer, "session_id": effective_session}
+                )
+        except Exception as e:
+            logger.error(f"Error persisting to SQLite: {e}", exc_info=True)
 
         return ChatResult(
             trace_id=trace_id,

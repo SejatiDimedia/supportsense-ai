@@ -4,8 +4,10 @@ from app.config import settings
 from app.api.routes_health import router as health_router
 from app.api.routes_metrics import router as metrics_router
 from app.observability.logger import setup_structured_logging
+from app.persistence.db import init_db
 
 setup_structured_logging()
+init_db()
 
 app = FastAPI(
     title=settings.app_name,
