@@ -1,6 +1,6 @@
 import { ChatRequest, ChatResponse, TelemetryData } from '../types';
 
-const BASE_URL = '';
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, '') || '';
 
 export async function sendChatMessage(req: ChatRequest): Promise<ChatResponse> {
   const response = await fetch(`${BASE_URL}/chat`, {

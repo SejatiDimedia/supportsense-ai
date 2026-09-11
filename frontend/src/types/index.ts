@@ -11,6 +11,7 @@ export interface ChatMessage {
   latency_ms?: number;
   trace_id?: string;
   context_used?: string;
+  isStreaming?: boolean;
 }
 
 export interface ChatRequest {
@@ -52,3 +53,10 @@ export interface ScenarioItem {
   prompt: string;
   expectedRoute: RouteType;
 }
+
+export interface SessionItem {
+  id: string;
+  title: string;
+  updatedAt: number;
+}
+

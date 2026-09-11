@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
-import { ChevronDown, Share2, MoreVertical, Check } from 'lucide-react';
+import { ChevronDown, Share2, MoreVertical, Check, Menu } from 'lucide-react';
 
 interface HeaderProps {
   sessionId: string;
   onResetSession: () => void;
+  onToggleMobileSidebar?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ sessionId, onResetSession }) => {
+export const Header: React.FC<HeaderProps> = ({
+  sessionId,
+  onResetSession,
+  onToggleMobileSidebar,
+}) => {
   const [copied, setCopied] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -17,16 +22,27 @@ export const Header: React.FC<HeaderProps> = ({ sessionId, onResetSession }) => 
   };
 
   return (
-    <header className="flex items-center justify-between border-b border-slate-100 bg-white px-8 py-3.5">
-      {/* Model Selector Dropdown */}
-      <div className="relative">
-        <button
-          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
-        >
-          <span>SupportSense 1.0</span>
-          <ChevronDown className="h-4 w-4 text-slate-500 transition-transform" />
-        </button>
+    <header className="flex items-center justify-between border-b border-slate-100 bg-white px-4 md:px-8 py-3.5">
+      {/* Left Area: Mobile Menu Toggle + Model Selector Dropdown */}
+      <div className="flex items-center gap-2">
+        {onToggleMobileSidebar && (
+          <button
+            onClick={onToggleMobileSidebar}
+            aria-label="Open sidebar menu"
+            className="flex md:hidden h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+        )}
+
+        <div className="relative">
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
+          >
+            <span>SupportSense 1.0</span>
+            <ChevronDown className="h-4 w-4 text-slate-500 transition-transform" />
+          </button>
 
         {isDropdownOpen && (
           <div className="absolute left-0 mt-1 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-200/50 z-50 text-xs">
@@ -40,6 +56,7 @@ export const Header: React.FC<HeaderProps> = ({ sessionId, onResetSession }) => 
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* Right Actions: Share, Options, Profile */}

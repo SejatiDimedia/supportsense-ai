@@ -7,6 +7,7 @@ interface ChatStreamProps {
   isLoading: boolean;
   onInspectContext: (message: ChatMessage) => void;
   selectedMessageId?: string;
+  onStreamingComplete?: (messageId: string) => void;
 }
 
 const ROUTE_CONFIG: Record<RouteType, { label: string; style: string }> = {
@@ -57,11 +58,54 @@ const getThinkingStep = (seconds: number) => {
   };
 };
 
+const StreamingText: React.FC<{
+  text: string;
+  isStreaming?: boolean;
+  onComplete?: () => void;
+}> = ({ text, isStreaming, onComplete }) => {
+  const [displayedLength, setDisplayedLength] = useState(isStreaming ? 0 : text.length);
+
+  useEffect(() => {
+    if (!isStreaming) {
+      setDisplayedLength(text.length);
+      return;
+    }
+
+    setDisplayedLength(0);
+    let current = 0;
+    const total = text.length;
+    const interval = setInterval(() => {
+      current += Math.max(3, Math.floor(Math.random() * 4) + 2);
+      if (current >= total) {
+        setDisplayedLength(total);
+        clearInterval(interval);
+        onComplete?.();
+      } else {
+        setDisplayedLength(current);
+      }
+    }, 16);
+
+    return () => clearInterval(interval);
+  }, [text, isStreaming, onComplete]);
+
+  if (!isStreaming || displayedLength >= text.length) {
+    return <div className="whitespace-pre-wrap leading-relaxed font-sans">{text}</div>;
+  }
+
+  return (
+    <div className="whitespace-pre-wrap leading-relaxed font-sans">
+      {text.slice(0, displayedLength)}
+      <span className="inline-block w-1.5 h-3.5 ml-0.5 bg-slate-800 animate-pulse align-middle" />
+    </div>
+  );
+};
+
 export const ChatStream: React.FC<ChatStreamProps> = ({
   messages,
   isLoading,
   onInspectContext,
   selectedMessageId,
+  onStreamingComplete,
 }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -89,7 +133,7 @@ export const ChatStream: React.FC<ChatStreamProps> = ({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-8 py-6 space-y-5 max-w-4xl w-full mx-auto">
+    <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-5 max-w-4xl w-full mx-auto">
       {messages.map((msg) => {
         const isUser = msg.sender === 'user';
         const isSelected = msg.id === selectedMessageId;
@@ -106,7 +150,7 @@ export const ChatStream: React.FC<ChatStreamProps> = ({
             )}
 
             <div
-              className={`max-w-2xl rounded-2xl p-4 text-sm transition-all ${
+              className={`max-w-[85%] md:max-w-2xl rounded-2xl p-4 text-sm transition-all ${
                 isUser
                   ? 'bg-slate-900 text-white shadow-sm'
                   : isSelected
@@ -150,10 +194,12 @@ export const ChatStream: React.FC<ChatStreamProps> = ({
                 </div>
               )}
 
-              {/* Text content */}
-              <div className="whitespace-pre-wrap leading-relaxed font-sans">
-                {msg.text}
-              </div>
+              {/* Text content with progressive streaming support */}
+              <StreamingText
+                text={msg.text}
+                isStreaming={msg.isStreaming}
+                onComplete={() => onStreamingComplete?.(msg.id)}
+              />
 
               {/* Footer Actions */}
               {!isUser && (
