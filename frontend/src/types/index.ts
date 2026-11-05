@@ -41,7 +41,7 @@ export interface TelemetryData {
     embedding: string;
   };
   database: {
-    postgres_url: string;
+    engine?: string;
     connected: boolean;
   };
 }

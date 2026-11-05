@@ -32,4 +32,10 @@ async def test_telemetry():
     assert "graph_nodes" in data
     assert "graph_edges" in data
     assert "pending_escalations" in data
+    assert "database" in data
+    assert "postgres_url" not in data["database"]
+    assert "postgres_url" not in response.text
+    assert "password" not in response.text.lower()
+    assert data["database"].get("engine") == "postgresql"
+    assert "connected" in data["database"]
 

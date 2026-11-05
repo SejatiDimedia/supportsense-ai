@@ -57,7 +57,7 @@ async def get_telemetry() -> Dict[str, Any]:
             "embedding": getattr(settings, "embedding_model", "nomic-embed-text"),
         },
         "database": {
-            "postgres_url": settings.postgres_url,
-            "connected": True if graph_nodes > 0 else False
+            "connected": graph_nodes > 0,
+            "engine": "postgresql"
         }
     }
